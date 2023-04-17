@@ -5,9 +5,7 @@ genomeNotebook
 
 ## Install
 
-``` sh
-pip install genomenotebook
-```
+    pip install genomenotebook
 
 ## How to use
 
@@ -19,7 +17,3 @@ g=GenomeBrowser(genome_path="data/MG1655_U00096.fasta",
                 gff_path="data/MG1655_U00096.gff3")
 g.show()
 ```
-
-  <div id="32874c4b-99f2-4464-a479-020e07368d80" data-root-id="p49784" style="display: contents;"></div>
-
-    Output cannot be displayed in a static page
