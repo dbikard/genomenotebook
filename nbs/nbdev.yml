@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "nbdev_genome"
+  site-url: "https://dbikard.github.io/nbdev_genome"
+  description: "A genome browser in your Jupyter notebook"
+  repo-branch: main
+  repo-url: "https://github.com/dbikard/nbdev_genome"
