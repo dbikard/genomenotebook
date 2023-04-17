@@ -5,6 +5,7 @@ __all__ = ['GenomeBrowser', 'Track']
 
 # %% ../nbs/00_browser.ipynb 4
 from fastcore.basics import *
+
 from genomenotebook.plotting import (
     get_genome_annotations,
     get_gene_patches, 
