@@ -33,8 +33,6 @@ import pyBigWig
 import numpy as np
 import pandas as pd
 import os
-output_notebook()
-
 
 # %% ../nbs/00_browser.ipynb 5
 class GenomeBrowser:
@@ -47,6 +45,8 @@ class GenomeBrowser:
                  show_seq=True, #shows the sequence when zooming in
                  search=True, #enables a search bar to lookup a gene name or a DNA sequence
                  **kwargs):
+        output_notebook()
+        
         self.genome_path=genome_path
         genome = next(SeqIO.parse(self.genome_path, 'fasta'))
         self.genome_id = genome.id
