@@ -4,4 +4,3 @@ website:
       - index.ipynb
       - 00_browser.ipynb
       - 01_plotting.ipynb
-      - 02_examples.ipynb
