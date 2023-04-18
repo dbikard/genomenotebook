@@ -221,7 +221,7 @@ def add_track(self:GenomeBrowser,
     return t
     
 
-# %% ../nbs/00_browser.ipynb 13
+# %% ../nbs/00_browser.ipynb 12
 @patch
 def line(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -232,10 +232,10 @@ def line(self:Track,
     self.fig.line(source=source, x=pos, y=y)
 
 
-# %% ../nbs/00_browser.ipynb 17
+# %% ../nbs/00_browser.ipynb 16
 from bokeh.transform import linear_cmap, factor_cmap
 
-# %% ../nbs/00_browser.ipynb 18
+# %% ../nbs/00_browser.ipynb 17
 @patch
 def scatter(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -259,7 +259,7 @@ def scatter(self:Track,
         self.fig.scatter(source=source, x=pos, y=y)
 
 
-# %% ../nbs/00_browser.ipynb 21
+# %% ../nbs/00_browser.ipynb 20
 @patch
 def bar(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
