@@ -34,7 +34,7 @@ import numpy as np
 import pandas as pd
 import os
 
-# %% ../nbs/00_browser.ipynb 5
+# %% ../nbs/00_browser.ipynb 6
 class GenomeBrowser:
     def __init__(self,
                  genome_path: str, #path to the fasta file of the genome sequence
@@ -45,7 +45,6 @@ class GenomeBrowser:
                  show_seq=True, #shows the sequence when zooming in
                  search=True, #enables a search bar to lookup a gene name or a DNA sequence
                  **kwargs):
-        output_notebook()
         
         self.genome_path=genome_path
         genome = next(SeqIO.parse(self.genome_path, 'fasta'))
@@ -193,7 +192,7 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/00_browser.ipynb 7
+# %% ../nbs/00_browser.ipynb 8
 class Track:
     def __init__(self,
                  height: int = 200, #size of the track
@@ -208,7 +207,7 @@ class Track:
         
 
 
-# %% ../nbs/00_browser.ipynb 9
+# %% ../nbs/00_browser.ipynb 10
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200 #size of the track
@@ -222,7 +221,7 @@ def add_track(self:GenomeBrowser,
     return t
     
 
-# %% ../nbs/00_browser.ipynb 12
+# %% ../nbs/00_browser.ipynb 13
 @patch
 def line(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -233,10 +232,10 @@ def line(self:Track,
     self.fig.line(source=source, x=pos, y=y)
 
 
-# %% ../nbs/00_browser.ipynb 16
+# %% ../nbs/00_browser.ipynb 17
 from bokeh.transform import linear_cmap, factor_cmap
 
-# %% ../nbs/00_browser.ipynb 17
+# %% ../nbs/00_browser.ipynb 18
 @patch
 def scatter(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -260,7 +259,7 @@ def scatter(self:Track,
         self.fig.scatter(source=source, x=pos, y=y)
 
 
-# %% ../nbs/00_browser.ipynb 20
+# %% ../nbs/00_browser.ipynb 21
 @patch
 def bar(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
