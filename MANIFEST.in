@@ -2,5 +2,6 @@ include settings.ini
 include LICENSE
 include CONTRIBUTING.md
 include README.md
-include genomenotebook/*.js
+include genomenotebook/javascript/*
+include genomenotebook/data/*
 recursive-exclude * __pycache__

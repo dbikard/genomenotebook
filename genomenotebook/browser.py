@@ -27,11 +27,12 @@ from bokeh.plotting import show, figure
 from bokeh.layouts import column, row
 
 from Bio import SeqIO
-from .js_callback_code import x_range_change_callback_code, search_callback_code
+from .js_callback_code import x_range_change_callback_code, search_callback_code, get_example_data_dir
 from bokeh.io import output_notebook
 import pyBigWig
 import numpy as np
 import pandas as pd
+import os
 output_notebook()
 
 
