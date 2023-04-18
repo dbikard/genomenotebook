@@ -25,6 +25,6 @@ g=gn.GenomeBrowser(genome_path=genome_path, gff_path=gff_path)
 g.show()
 ```
 
-  <div id="1ba3256a-9216-4a03-9012-51bf37d74121" data-root-id="p25387" style="display: contents;"></div>
+  <div id="92453fab-390d-47f1-826e-8b1bff298816" data-root-id="p13223" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
