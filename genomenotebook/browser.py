@@ -89,11 +89,6 @@ class GenomeBrowser:
 
     def get_browser(self,show_seq=True):
 
-        annotation = get_genome_annotations(self.gff_path,self.bounds)
-        annotation.gene = annotation.gene.fillna("")
-        annotation.gene = annotation[['gene', 'locus_tag']].apply(lambda x: f"{x[0]} {x[1]}", axis=1)
-        genes = get_genes_from_annotation(annotation)
-
         semi_win = self.init_win / 2
         x_range = Range1d(
             max(self.bounds[0],self.init_pos - semi_win), min(self.bounds[1],self.init_pos + semi_win), 
@@ -101,7 +96,9 @@ class GenomeBrowser:
             max_interval=100000,
             min_interval=40
         )
-
+        
+        annotation = get_genome_annotations(self.gff_path,self.bounds)
+        genes = get_genes_from_annotation(annotation) 
         self.glyph_source = ColumnDataSource(get_gene_patches(genes, x_range.start, x_range.end))
 
         #This will contain the glyphs plotted by bokeh
@@ -192,7 +189,7 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/00_browser.ipynb 8
+# %% ../nbs/00_browser.ipynb 9
 class Track:
     def __init__(self,
                  height: int = 200, #size of the track
@@ -207,7 +204,7 @@ class Track:
         
 
 
-# %% ../nbs/00_browser.ipynb 10
+# %% ../nbs/00_browser.ipynb 11
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200 #size of the track
@@ -221,7 +218,7 @@ def add_track(self:GenomeBrowser,
     return t
     
 
-# %% ../nbs/00_browser.ipynb 13
+# %% ../nbs/00_browser.ipynb 14
 @patch
 def line(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -232,10 +229,10 @@ def line(self:Track,
     self.fig.line(source=source, x=pos, y=y)
 
 
-# %% ../nbs/00_browser.ipynb 16
+# %% ../nbs/00_browser.ipynb 17
 from bokeh.transform import linear_cmap, factor_cmap
 
-# %% ../nbs/00_browser.ipynb 17
+# %% ../nbs/00_browser.ipynb 18
 @patch
 def scatter(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -259,7 +256,7 @@ def scatter(self:Track,
         self.fig.scatter(source=source, x=pos, y=y)
 
 
-# %% ../nbs/00_browser.ipynb 21
+# %% ../nbs/00_browser.ipynb 22
 @patch
 def bar(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
