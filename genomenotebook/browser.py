@@ -39,11 +39,11 @@ class GenomeBrowser:
     def __init__(self,
                  genome_path: str, #path to the fasta file of the genome sequence
                  gff_path: str, #path to the gff3 file of the annotations
-                 init_pos=None, #initial position to display
-                 init_win=10000, #initial window size (max=20000)
-                 bounds=None, #bounds can be specified. This helps preserve memory by not loading the whole genome if not needed.
-                 show_seq=True, #shows the sequence when zooming in
-                 search=True, #enables a search bar to lookup a gene name or a DNA sequence
+                 init_pos: int = None, #initial position to display
+                 init_win: int = 10000, #initial window size (max=20000)
+                 bounds: tuple = None, #bounds can be specified. This helps preserve memory by not loading the whole genome if not needed.
+                 show_seq: bool = True, #shows the sequence when zooming in
+                 search: bool = True, #enables a search bar to lookup a gene name or a DNA sequence
                  **kwargs):
         
         self.genome_path=genome_path
@@ -51,18 +51,18 @@ class GenomeBrowser:
         self.genome_id = genome.id
         self.genome_size=len(genome.seq)
         
-        if not bounds:
+        if bounds == None:
             self.bounds=(0,self.genome_size)
         else:
             self.bounds=bounds
-            
+        
         self.seq=genome.seq[self.bounds[0]:self.bounds[1]]
    
         self.gff_path=gff_path
 
-        if not init_pos:
+        if init_pos == None:
             self.init_pos=sum(self.bounds)//2
-        elif init_pos>bounds[1] or init_pos<bounds[0]:
+        elif init_pos>self.bounds[1] or init_pos<self.bounds[0]:
             print("WARNING: Requested an initial position outside of the browser bounds")
             self.init_pos=sum(self.bounds)//2
         else:
@@ -189,7 +189,7 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/00_browser.ipynb 9
+# %% ../nbs/00_browser.ipynb 11
 class Track:
     def __init__(self,
                  height: int = 200, #size of the track
@@ -204,7 +204,7 @@ class Track:
         
 
 
-# %% ../nbs/00_browser.ipynb 11
+# %% ../nbs/00_browser.ipynb 13
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200 #size of the track
@@ -218,7 +218,7 @@ def add_track(self:GenomeBrowser,
     return t
     
 
-# %% ../nbs/00_browser.ipynb 14
+# %% ../nbs/00_browser.ipynb 16
 @patch
 def line(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -229,16 +229,15 @@ def line(self:Track,
     self.fig.line(source=source, x=pos, y=y)
 
 
-# %% ../nbs/00_browser.ipynb 17
-from bokeh.transform import linear_cmap, factor_cmap
+# %% ../nbs/00_browser.ipynb 19
+from bokeh.transform import factor_cmap
 
-# %% ../nbs/00_browser.ipynb 18
+# %% ../nbs/00_browser.ipynb 20
 @patch
 def scatter(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
-         z: str = None, #name of a column containing numerical data rendered as a linear color map (cannot be used for line plots)
          factors: str = None, #name of a column of values to be used as factors
         ):
     source=source.loc[(self.bounds[0] < source[pos]) & (source[pos] < self.bounds[1])]
@@ -250,13 +249,11 @@ def scatter(self:Track,
 
         self.fig.legend.location = "top_left"
         self.fig.legend.title = "ori"
-    elif z!=None:
-        pass
     else:
         self.fig.scatter(source=source, x=pos, y=y)
 
 
-# %% ../nbs/00_browser.ipynb 22
+# %% ../nbs/00_browser.ipynb 24
 @patch
 def bar(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data

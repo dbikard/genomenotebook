@@ -13,20 +13,22 @@ function getReverseComplement(seq) {
 }
 
 div.text="";
-let searchString = cb_obj.value;
+let searchString = cb_obj.value.toUpperCase();
 let isDnaSequence = /^[ACGT]{6,}$/i.test(searchString);
 let pos = null;
 
 if (isDnaSequence) {
-    searchString = searchString.toUpperCase();
-    let seq = sequence.seq.substring(x_range.start-sequence.bounds[0]);
-    let startPos = seq.indexOf(searchString)+sequence.bounds[0];
+    console.log("Searching for DNA sequence.");
+    //searchString = searchString;
+    let searchStart = x_range.start-sequence.bounds[0];
+    let seq = sequence.seq.substring(searchStart);
+    let startPos = seq.indexOf(searchString) + searchStart + sequence.bounds[0];
 
 
     if (startPos === -1) {
     // Search the reverse complement of the search string
     let reverseComplement = getReverseComplement(searchString);
-    let reverseStartPos = seq.indexOf(reverseComplement)+sequence.bounds[0];
+    let reverseStartPos = seq.indexOf(reverseComplement) + searchStart + sequence.bounds[0];
 
     if (reverseStartPos === -1) {
         // Substring not found in either forward or reverse complement
@@ -41,15 +43,18 @@ if (isDnaSequence) {
     let endPos = startPos + searchString.length;
     pos = (startPos + endPos) / 2;
 
-    div.text += searchString + pos;
+    //div.text += searchString + pos;
     x_range.start = pos - 14;
     x_range.end = pos + 14;
     search_span_source.data['x'] = [pos];
     search_span_source.data['width'] = [endPos - startPos];
     search_span_source.change.emit();
-} else {
-  const ix = all_glyphs['names'].findIndex((element) => element.includes(searchString));
-  const g = all_glyphs['names'].find((element) => element.includes(searchString));
+} else { 
+  //looking for the position of a gene
+  console.log("Searching for gene name")
+  let ix = all_glyphs['names'].findIndex((element) => element.toUpperCase().includes(searchString));
+  let g = all_glyphs['names'].find((element) => element.toUpperCase().includes(searchString));
+  console.log(g)
   pos = all_glyphs['xs'][ix][0];
   x_range.start = pos - 5000;
   x_range.end = pos + 5000;

@@ -20,15 +20,212 @@ when zooming in.
 #Using the example E. coli genome data from the package
 import genomenotebook as gn
 import os
+from bokeh.io import output_notebook
+output_notebook() 
 
 data_path = gn.get_example_data_dir()
 genome_path = os.path.join(data_path, "MG1655_U00096.fasta")
 gff_path = os.path.join(data_path, "MG1655_U00096.gff3")
 
-g=gn.GenomeBrowser(genome_path=genome_path, gff_path=gff_path)
+g=gn.GenomeBrowser(genome_path=genome_path, gff_path=gff_path, init_pos=10000)
 g.show()
 ```
 
-  <div id="92453fab-390d-47f1-826e-8b1bff298816" data-root-id="p13223" style="display: contents;"></div>
+<style>
+        .bk-notebook-logo {
+            display: block;
+            width: 20px;
+            height: 20px;
+            background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAABx0RVh0U29mdHdhcmUAQWRvYmUgRmlyZXdvcmtzIENTNui8sowAAAOkSURBVDiNjZRtaJVlGMd/1/08zzln5zjP1LWcU9N0NkN8m2CYjpgQYQXqSs0I84OLIC0hkEKoPtiH3gmKoiJDU7QpLgoLjLIQCpEsNJ1vqUOdO7ppbuec5+V+rj4ctwzd8IIbbi6u+8f1539dt3A78eXC7QizUF7gyV1fD1Yqg4JWz84yffhm0qkFqBogB9rM8tZdtwVsPUhWhGcFJngGeWrPzHm5oaMmkfEg1usvLFyc8jLRqDOMru7AyC8saQr7GG7f5fvDeH7Ej8CM66nIF+8yngt6HWaKh7k49Soy9nXurCi1o3qUbS3zWfrYeQDTB/Qj6kX6Ybhw4B+bOYoLKCC9H3Nu/leUTZ1JdRWkkn2ldcCamzrcf47KKXdAJllSlxAOkRgyHsGC/zRday5Qld9DyoM4/q/rUoy/CXh3jzOu3bHUVZeU+DEn8FInkPBFlu3+nW3Nw0mk6vCDiWg8CeJaxEwuHS3+z5RgY+YBR6V1Z1nxSOfoaPa4LASWxxdNp+VWTk7+4vzaou8v8PN+xo+KY2xsw6une2frhw05CTYOmQvsEhjhWjn0bmXPjpE1+kplmmkP3suftwTubK9Vq22qKmrBhpY4jvd5afdRA3wGjFAgcnTK2s4hY0/GPNIb0nErGMCRxWOOX64Z8RAC4oCXdklmEvcL8o0BfkNK4lUg9HTl+oPlQxdNo3Mg4Nv175e/1LDGzZen30MEjRUtmXSfiTVu1kK8W4txyV6BMKlbgk3lMwYCiusNy9fVfvvwMxv8Ynl6vxoByANLTWplvuj/nF9m2+PDtt1eiHPBr1oIfhCChQMBw6Aw0UulqTKZdfVvfG7VcfIqLG9bcldL/+pdWTLxLUy8Qq38heUIjh4XlzZxzQm19lLFlr8vdQ97rjZVOLf8nclzckbcD4wxXMidpX30sFd37Fv/GtwwhzhxGVAprjbg0gCAEeIgwCZyTV2Z1REEW8O4py0wsjeloKoMr6iCY6dP92H6Vw/oTyICIthibxjm/DfN9lVz8IqtqKYLUXfoKVMVQVVJOElGjrnnUt9T9wbgp8AyYKaGlqingHZU/uG2NTZSVqwHQTWkx9hxjkpWDaCg6Ckj5qebgBVbT3V3NNXMSiWSDdGV3hrtzla7J+duwPOToIg42ChPQOQjspnSlp1V+Gjdged7+8UN5CRAV7a5EdFNwCjEaBR27b3W890TE7g24NAP/mMDXRWrGoFPQI9ls/MWO2dWFAar/xcOIImbbpA3zgAAAABJRU5ErkJggg==);
+        }
+    </style>
+    <div>
+        <a href="https://bokeh.org" target="_blank" class="bk-notebook-logo"></a>
+        <span id="p118203">Loading BokehJS ...</span>
+    </div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_load.v0+json
+
+  <div id="7ba2da04-aef9-4678-a1eb-0ca96dd9a6b3" data-root-id="p118284" style="display: contents;"></div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
+
+Adding a track with random points as a demonstration. genomeNotebook
+uses the Bokeh library and `track.fig` is a simple Bokeh figure on which
+you can plot anything you want using Bokeh.
+
+``` python
+import numpy as np
+
+track = g.add_track()
+
+x= np.arange(0,100000,100)
+y= np.random.randint(0,10,size=x.shape)
+track.fig.scatter(x=x,y=y)
+g.show()
+```
+
+  <div id="bb68d2b5-bd3f-4398-8f72-6d193d88153d" data-root-id="p130825" style="display: contents;"></div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
+
+#### Plotting some ChIP-seq data
+
+Track objects also have a few custom plotting functions: line, scatter
+and bar.
+
+A pandas DataFrame is passed as the source of the data as follow.
+
+``` python
+import pyBigWig
+import pandas as pd
+
+g=gn.GenomeBrowser(genome_path=genome_path, gff_path=gff_path, bounds=(0,100000), search=False, show_seq=False)
+
+#Importing some coverage data from a BigWig file
+bw_file_path=os.path.join(data_path,"ChIP-ACCCA-1.bw")
+refname='NC_000913'
+with pyBigWig.open(bw_file_path) as bw:
+    cov=bw.values(refname,0,g.genome_size,numpy=True)
+    
+source=pd.DataFrame({"pos": np.arange(0,g.genome_size,10),
+                     "cov": cov[::10]})
+
+track=g.add_track()
+track.line(source,pos="pos",y="cov")
+g.show()
+```
+
+  <div id="25ed947e-6bd4-483f-976c-b009c5406014" data-root-id="p143537" style="display: contents;"></div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
+
+#### Plotting some CRISPR screening data
+
+``` python
+#Opening the Cui 2018 CRISPRi screen data
+cui2018data="https://gitlab.pasteur.fr/dbikard/badSeed_public/raw/master/screen_data.csv"
+cui2018data=pd.read_csv(cui2018data,index_col=0)
+cui2018data.head()
+```
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>gene</th>
+      <th>essential</th>
+      <th>pos</th>
+      <th>ori</th>
+      <th>coding</th>
+      <th>fit18</th>
+      <th>fit75</th>
+      <th>ntargets</th>
+      <th>seq</th>
+    </tr>
+    <tr>
+      <th>guide</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>AAAAAACCTGCTGGTGAGGC</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>2202483</td>
+      <td>-</td>
+      <td>NaN</td>
+      <td>-4.850012</td>
+      <td>-1.437546</td>
+      <td>1</td>
+      <td>AAAGCAGATCACAGTAAATAAAAAAACCTGCTGGTGAGGCAGGTTC...</td>
+    </tr>
+    <tr>
+      <th>AAAAAACGTATTCGCTTGCA</th>
+      <td>curA</td>
+      <td>False</td>
+      <td>1517891</td>
+      <td>+</td>
+      <td>False</td>
+      <td>-0.094026</td>
+      <td>-0.100313</td>
+      <td>1</td>
+      <td>TGTTGATGGCTACAGTGCTGAAAAAACGTATTCGCTTGCAAGGTTT...</td>
+    </tr>
+    <tr>
+      <th>AAAAAAGCGCACTTTTTGAC</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>1919717</td>
+      <td>+</td>
+      <td>NaN</td>
+      <td>-1.109310</td>
+      <td>-0.246740</td>
+      <td>1</td>
+      <td>GTAACGCCTGACAGCGCACAAAAAAAGCGCACTTTTTGACTGGCAC...</td>
+    </tr>
+    <tr>
+      <th>AAAAAAGCGGTGACTTACGA</th>
+      <td>bglA</td>
+      <td>False</td>
+      <td>3042929</td>
+      <td>+</td>
+      <td>False</td>
+      <td>-1.328831</td>
+      <td>-0.905068</td>
+      <td>1</td>
+      <td>GCGCCCATATCGAAGAGATGAAAAAAGCGGTGACTTACGATGGCGT...</td>
+    </tr>
+    <tr>
+      <th>AAAAAATCTGCCCGTGTCGT</th>
+      <td>gyrA</td>
+      <td>True</td>
+      <td>2337231</td>
+      <td>-</td>
+      <td>False</td>
+      <td>-0.840373</td>
+      <td>-0.598858</td>
+      <td>1</td>
+      <td>ATGACTGGAACAAAGCCTATAAAAAATCTGCCCGTGTCGTTGGTGA...</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+``` python
+g=gn.GenomeBrowser(genome_path=genome_path, gff_path=gff_path, bounds=(0,1000000), search=False, show_seq=False)
+
+track=g.add_track(height=100)
+track.scatter(source=cui2018data,pos="pos",y="fit75",factors="ori")
+
+track2=g.add_track(height=100)
+track2.scatter(source=cui2018data,pos="pos",y="fit18",factors="ori")
+g.show()
+```
+
+  <div id="f062e932-a384-4c17-ba8f-bd38b090a6fa" data-root-id="p144537" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
