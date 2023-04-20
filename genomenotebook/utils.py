@@ -76,9 +76,12 @@ def create_genome_browser_plot(glyphSource, x_range, **kwargs):
     return p_annot
 
 # %% ../nbs/01_utils.ipynb 6
-def get_genome_annotations(gff_path: str, bounds=None):
+def get_genome_annotations(gff_path: str, seq_id: str=None, bounds=None):
     annotation = gffpd.read_gff3(gff_path)
-    annotation = annotation.attributes_to_columns()
+    annotation = annotation.df
+    if seq_id:
+        annotation = annotation.loc[(annotation.seq_id == seq_id)]
+        
     if bounds:
         annotation = annotation.loc[(annotation.start<bounds[1]) & (annotation.end>bounds[0])]
 
@@ -87,24 +90,13 @@ def get_genome_annotations(gff_path: str, bounds=None):
     return annotation
 
 # %% ../nbs/01_utils.ipynb 7
-def get_genome_annotations(gff_path: str, bounds=None):
-    annotation = gffpd.read_gff3(gff_path)
-    annotation = annotation.df
-    if bounds:
-        annotation = annotation.loc[(annotation.start<bounds[1]) & (annotation.end>bounds[0])]
-
-    annotation.loc[:, "left"] = annotation[["start"]].values
-    annotation.loc[:, "right"] = annotation[["end"]].values
-    return annotation
-
-# %% ../nbs/01_utils.ipynb 8
 from .js_callback_code import get_example_data_dir
 import os
 
-# %% ../nbs/01_utils.ipynb 10
+# %% ../nbs/01_utils.ipynb 9
 import re
 
-# %% ../nbs/01_utils.ipynb 11
+# %% ../nbs/01_utils.ipynb 10
 def extract_attribute(input_str:str, #attribute string to parse
                       attr_name:str, #name of the attribute to extract
                      ) -> dict:
@@ -116,7 +108,7 @@ def extract_attribute(input_str:str, #attribute string to parse
     else:
         return None
 
-# %% ../nbs/01_utils.ipynb 14
+# %% ../nbs/01_utils.ipynb 13
 def get_genes_from_annotation(annotation):
 
     genes = annotation[
@@ -147,7 +139,7 @@ def get_genes_from_annotation(annotation):
     
     return genes
 
-# %% ../nbs/01_utils.ipynb 17
+# %% ../nbs/01_utils.ipynb 16
 Y_RANGE = (-2, 2)
 def get_y_range() -> tuple:
     """Accessor that returns the Y range for the genome browser plot
@@ -171,7 +163,7 @@ def get_all_glyphs(genes,bounds:tuple):
     
     return all_glyphs
 
-# %% ../nbs/01_utils.ipynb 18
+# %% ../nbs/01_utils.ipynb 17
 def rect_patch(genes_region):
     y_min, y_max = gene_y_range
     xs = list(
@@ -201,13 +193,13 @@ def rect_patch(genes_region):
         color=color,
     )
 
-# %% ../nbs/01_utils.ipynb 19
+# %% ../nbs/01_utils.ipynb 18
 def arrow_patch(genes_region):
     arr_plus = get_arrow_patch(genes_region[genes_region["strand"] == "+"], "+")
     arr_minus = get_arrow_patch(genes_region[genes_region["strand"] == "-"], "-")
     return dict([(k, arr_plus[k] + arr_minus[k]) for k in arr_plus.keys()])
 
-# %% ../nbs/01_utils.ipynb 20
+# %% ../nbs/01_utils.ipynb 19
 gene_y_range = (-1.5, -1)
 
 def get_arrow_patch(genes_region, ori="+"):
@@ -254,7 +246,7 @@ def get_arrow_patch(genes_region, ori="+"):
         color=color,
     )
 
-# %% ../nbs/01_utils.ipynb 21
+# %% ../nbs/01_utils.ipynb 20
 def get_gene_patches(genes, left, right):
     genes_region = genes[
         (genes["right"] > left)

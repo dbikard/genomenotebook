@@ -3,4 +3,4 @@ website:
     contents:
       - index.ipynb
       - 00_browser.ipynb
-      - 01_plotting.ipynb
+      - 01_utils.ipynb

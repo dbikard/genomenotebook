@@ -33,12 +33,14 @@ import pyBigWig
 import numpy as np
 import pandas as pd
 import os
+import itertools
 
 # %% ../nbs/00_browser.ipynb 6
 class GenomeBrowser:
     def __init__(self,
                  genome_path: str, #path to the fasta file of the genome sequence
                  gff_path: str, #path to the gff3 file of the annotations
+                 seq_id: str = None, #id of the sequence to show for genomes with multiple contigs
                  init_pos: int = None, #initial position to display
                  init_win: int = 10000, #initial window size (max=20000)
                  bounds: tuple = None, #bounds can be specified. This helps preserve memory by not loading the whole genome if not needed.
@@ -47,16 +49,28 @@ class GenomeBrowser:
                  **kwargs):
         
         self.genome_path=genome_path
-        genome = next(SeqIO.parse(self.genome_path, 'fasta'))
-        self.genome_id = genome.id
-        self.genome_size=len(genome.seq)
+        if seq_id==None: #when no seq_id is provided we take the first element
+            rec = next(SeqIO.parse(self.genome_path, 'fasta'))
+        else:
+            rec_found=False
+            for rec in SeqIO.parse(self.genome_path, 'fasta'):
+                if rec.id==seq_id:
+                    rec_found=True
+                    break
+            
+            if not rec_found:
+                print("seq_id not found in fasta file")
+                    
+        self.seq_id = rec.id
+        self.seq = rec.seq
+        self.seq_len = len(rec.seq)
         
         if bounds == None:
-            self.bounds=(0,self.genome_size)
+            self.bounds=(0,self.seq_len)
         else:
             self.bounds=bounds
         
-        self.seq=genome.seq[self.bounds[0]:self.bounds[1]]
+        self.seq=self.seq[self.bounds[0]:self.bounds[1]]
    
         self.gff_path=gff_path
 
@@ -97,7 +111,10 @@ class GenomeBrowser:
             min_interval=40
         )
         
-        annotation = get_genome_annotations(self.gff_path,self.bounds)
+        annotation = get_genome_annotations(self.gff_path,
+                                            seq_id = self.seq_id,
+                                            bounds = self.bounds)
+        
         genes = get_genes_from_annotation(annotation) 
         self.glyph_source = ColumnDataSource(get_gene_patches(genes, x_range.start, x_range.end))
 

@@ -27,7 +27,7 @@ data_path = gn.get_example_data_dir()
 genome_path = os.path.join(data_path, "MG1655_U00096.fasta")
 gff_path = os.path.join(data_path, "MG1655_U00096.gff3")
 
-g=gn.GenomeBrowser(genome_path=genome_path, gff_path=gff_path, init_pos=10000)
+g=gn.GenomeBrowser(genome_path=genome_path, gff_path=gff_path, init_pos=100000)
 g.show()
 ```
 
@@ -41,12 +41,12 @@ g.show()
     </style>
     <div>
         <a href="https://bokeh.org" target="_blank" class="bk-notebook-logo"></a>
-        <span id="p175635">Loading BokehJS ...</span>
+        <span id="p96047">Loading BokehJS ...</span>
     </div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_load.v0+json
 
-  <div id="250a8f25-ed14-47ca-9a43-11fcbfd6e48b" data-root-id="p175716" style="display: contents;"></div>
+  <div id="4f769b64-f2b6-46ec-9589-3d8102853a42" data-root-id="p96128" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
 
@@ -65,7 +65,7 @@ track.fig.scatter(x=x,y=y)
 g.show()
 ```
 
-  <div id="edc42f3f-8958-4150-89e0-8c3067c356aa" data-root-id="p188517" style="display: contents;"></div>
+  <div id="59de2023-e7bf-4aaf-8282-8b606616719e" data-root-id="p108694" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
 
@@ -90,9 +90,9 @@ g=gn.GenomeBrowser(genome_path=genome_path,
 bw_file_path=os.path.join(data_path,"ChIP-ACCCA-1.bw")
 refname='NC_000913'
 with pyBigWig.open(bw_file_path) as bw:
-    cov=bw.values(refname,0,g.genome_size,numpy=True)
+    cov=bw.values(refname,0,g.seq_len,numpy=True)
     
-source=pd.DataFrame({"pos": np.arange(0,g.genome_size,10),
+source=pd.DataFrame({"pos": np.arange(0,g.seq_len,10),
                      "cov": cov[::10]})
 
 track=g.add_track()
@@ -100,7 +100,7 @@ track.line(source,pos="pos",y="cov")
 g.show()
 ```
 
-  <div id="5a930e37-2a5f-4d0a-83af-aafb02cd0366" data-root-id="p201489" style="display: contents;"></div>
+  <div id="8d030a95-a485-49bb-a60a-1a7d68244b8c" data-root-id="p121431" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
 
@@ -112,6 +112,21 @@ cui2018data="https://gitlab.pasteur.fr/dbikard/badSeed_public/raw/master/screen_
 cui2018data=pd.read_csv(cui2018data,index_col=0)
 cui2018data.head()
 ```
+
+<style>
+        .bk-notebook-logo {
+            display: block;
+            width: 20px;
+            height: 20px;
+            background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAABx0RVh0U29mdHdhcmUAQWRvYmUgRmlyZXdvcmtzIENTNui8sowAAAOkSURBVDiNjZRtaJVlGMd/1/08zzln5zjP1LWcU9N0NkN8m2CYjpgQYQXqSs0I84OLIC0hkEKoPtiH3gmKoiJDU7QpLgoLjLIQCpEsNJ1vqUOdO7ppbuec5+V+rj4ctwzd8IIbbi6u+8f1539dt3A78eXC7QizUF7gyV1fD1Yqg4JWz84yffhm0qkFqBogB9rM8tZdtwVsPUhWhGcFJngGeWrPzHm5oaMmkfEg1usvLFyc8jLRqDOMru7AyC8saQr7GG7f5fvDeH7Ej8CM66nIF+8yngt6HWaKh7k49Soy9nXurCi1o3qUbS3zWfrYeQDTB/Qj6kX6Ybhw4B+bOYoLKCC9H3Nu/leUTZ1JdRWkkn2ldcCamzrcf47KKXdAJllSlxAOkRgyHsGC/zRday5Qld9DyoM4/q/rUoy/CXh3jzOu3bHUVZeU+DEn8FInkPBFlu3+nW3Nw0mk6vCDiWg8CeJaxEwuHS3+z5RgY+YBR6V1Z1nxSOfoaPa4LASWxxdNp+VWTk7+4vzaou8v8PN+xo+KY2xsw6une2frhw05CTYOmQvsEhjhWjn0bmXPjpE1+kplmmkP3suftwTubK9Vq22qKmrBhpY4jvd5afdRA3wGjFAgcnTK2s4hY0/GPNIb0nErGMCRxWOOX64Z8RAC4oCXdklmEvcL8o0BfkNK4lUg9HTl+oPlQxdNo3Mg4Nv175e/1LDGzZen30MEjRUtmXSfiTVu1kK8W4txyV6BMKlbgk3lMwYCiusNy9fVfvvwMxv8Ynl6vxoByANLTWplvuj/nF9m2+PDtt1eiHPBr1oIfhCChQMBw6Aw0UulqTKZdfVvfG7VcfIqLG9bcldL/+pdWTLxLUy8Qq38heUIjh4XlzZxzQm19lLFlr8vdQ97rjZVOLf8nclzckbcD4wxXMidpX30sFd37Fv/GtwwhzhxGVAprjbg0gCAEeIgwCZyTV2Z1REEW8O4py0wsjeloKoMr6iCY6dP92H6Vw/oTyICIthibxjm/DfN9lVz8IqtqKYLUXfoKVMVQVVJOElGjrnnUt9T9wbgp8AyYKaGlqingHZU/uG2NTZSVqwHQTWkx9hxjkpWDaCg6Ckj5qebgBVbT3V3NNXMSiWSDdGV3hrtzla7J+duwPOToIg42ChPQOQjspnSlp1V+Gjdged7+8UN5CRAV7a5EdFNwCjEaBR27b3W890TE7g24NAP/mMDXRWrGoFPQI9ls/MWO2dWFAar/xcOIImbbpA3zgAAAABJRU5ErkJggg==);
+        }
+    </style>
+    <div>
+        <a href="https://bokeh.org" target="_blank" class="bk-notebook-logo"></a>
+        <span id="p122276">Loading BokehJS ...</span>
+    </div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_load.v0+json
 
 <div>
 <style scoped>
@@ -234,6 +249,43 @@ track2.scatter(source=cui2018data,pos="pos",y="fit18",factors="ori")
 g.show()
 ```
 
-  <div id="998ed0ef-216e-4c04-82b9-259e410201a9" data-root-id="p202749" style="display: contents;"></div>
+  <div id="94c2858b-7863-480d-9ed6-3a5c6603cb4e" data-root-id="p122464" style="display: contents;"></div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
+
+#### Working with multiple chromosomes / contigs
+
+``` python
+import itertools
+from Bio import SeqIO
+genome_path = os.path.join(data_path, "jmh43.fna")
+gff_path = os.path.join(data_path, "jmh43.gff")
+
+for rec in itertools.islice(SeqIO.parse(genome_path,"fasta"),5):
+    
+    g=gn.GenomeBrowser(genome_path=genome_path, 
+                    gff_path=gff_path, 
+                    seq_id=rec.id, 
+                    search=False)
+    g.show()
+```
+
+  <div id="d3236a44-01e1-4aa9-aafd-4ebb0e2f866c" data-root-id="p124688" style="display: contents;"></div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
+
+  <div id="40aca8a1-ae40-475e-83b4-6589688837fa" data-root-id="p125492" style="display: contents;"></div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
+
+  <div id="7fbac1b3-9f53-452b-be90-b64504bddc02" data-root-id="p126300" style="display: contents;"></div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
+
+  <div id="f280e856-f97a-4650-ae96-ea698b1cca2e" data-root-id="p127127" style="display: contents;"></div>
+
+    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
+
+  <div id="b44489f5-e707-47df-812e-854c1d73401a" data-root-id="p127967" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
