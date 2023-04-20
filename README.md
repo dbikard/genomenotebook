@@ -41,12 +41,12 @@ g.show()
     </style>
     <div>
         <a href="https://bokeh.org" target="_blank" class="bk-notebook-logo"></a>
-        <span id="p118203">Loading BokehJS ...</span>
+        <span id="p175635">Loading BokehJS ...</span>
     </div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_load.v0+json
 
-  <div id="7ba2da04-aef9-4678-a1eb-0ca96dd9a6b3" data-root-id="p118284" style="display: contents;"></div>
+  <div id="250a8f25-ed14-47ca-9a43-11fcbfd6e48b" data-root-id="p175716" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
 
@@ -65,7 +65,7 @@ track.fig.scatter(x=x,y=y)
 g.show()
 ```
 
-  <div id="bb68d2b5-bd3f-4398-8f72-6d193d88153d" data-root-id="p130825" style="display: contents;"></div>
+  <div id="edc42f3f-8958-4150-89e0-8c3067c356aa" data-root-id="p188517" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
 
@@ -80,7 +80,11 @@ A pandas DataFrame is passed as the source of the data as follow.
 import pyBigWig
 import pandas as pd
 
-g=gn.GenomeBrowser(genome_path=genome_path, gff_path=gff_path, bounds=(0,100000), search=False, show_seq=False)
+g=gn.GenomeBrowser(genome_path=genome_path, 
+                   gff_path=gff_path, 
+                   bounds=(0,100000), 
+                   search=False, 
+                   show_seq=False)
 
 #Importing some coverage data from a BigWig file
 bw_file_path=os.path.join(data_path,"ChIP-ACCCA-1.bw")
@@ -96,7 +100,7 @@ track.line(source,pos="pos",y="cov")
 g.show()
 ```
 
-  <div id="25ed947e-6bd4-483f-976c-b009c5406014" data-root-id="p143537" style="display: contents;"></div>
+  <div id="5a930e37-2a5f-4d0a-83af-aafb02cd0366" data-root-id="p201489" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
 
@@ -216,7 +220,11 @@ cui2018data.head()
 </div>
 
 ``` python
-g=gn.GenomeBrowser(genome_path=genome_path, gff_path=gff_path, bounds=(0,1000000), search=False, show_seq=False)
+g=gn.GenomeBrowser(genome_path=genome_path, 
+                   gff_path=gff_path, 
+                   bounds=(0,1000000), 
+                   search=False, 
+                   show_seq=False)
 
 track=g.add_track(height=100)
 track.scatter(source=cui2018data,pos="pos",y="fit75",factors="ori")
@@ -226,6 +234,6 @@ track2.scatter(source=cui2018data,pos="pos",y="fit18",factors="ori")
 g.show()
 ```
 
-  <div id="f062e932-a384-4c17-ba8f-bd38b090a6fa" data-root-id="p144537" style="display: contents;"></div>
+  <div id="998ed0ef-216e-4c04-82b9-259e410201a9" data-root-id="p202749" style="display: contents;"></div>
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_exec.v0+json
