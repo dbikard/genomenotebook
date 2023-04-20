@@ -2,5 +2,6 @@ website:
   sidebar:
     contents:
       - index.ipynb
-      - 00_browser.ipynb
-      - 01_utils.ipynb
+      - 00_Examples.ipynb
+      - 01_browser.ipynb
+      - 02_utils.ipynb
