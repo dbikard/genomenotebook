@@ -29,11 +29,15 @@ from bokeh.layouts import column, row
 from Bio import SeqIO
 from .js_callback_code import x_range_change_callback_code, search_callback_code, get_example_data_dir
 from bokeh.io import output_notebook
-import pyBigWig
 import numpy as np
 import pandas as pd
 import os
 import itertools
+
+try: #pyBigWig cannot be installed on Windows. This might make it possible for windows users to still install
+    import pyBigWig
+except ImportError:
+    pyBigWig = None
 
 # %% ../nbs/01_browser.ipynb 6
 class GenomeBrowser:
