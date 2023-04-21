@@ -5,6 +5,4 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Install optinal dependencies
-        run: pip install -r optional_dependency.txt
       - uses: fastai/workflows/nbdev-ci@master

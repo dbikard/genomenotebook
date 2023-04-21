@@ -30,7 +30,6 @@ if cfg.get('pip_requirements'): requirements += shlex.split(cfg.get('pip_require
 min_python = cfg['min_python']
 lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
 dev_requirements = (cfg.get('dev_requirements') or '').split()
-optional_dependency = (cfg.get('optional_dependency') or '').split()
 
 setuptools.setup(
     name = cfg['lib_name'],
@@ -45,8 +44,7 @@ setuptools.setup(
     include_package_data = True,
     package_data={'': ['data/*','javascript/*']},
     install_requires = requirements,
-    extras_require={ 'dev': dev_requirements, 
-                    'optional_dependency': optional_dependency },
+    extras_require={ 'dev': dev_requirements},
     dependency_links = cfg.get('dep_links','').split(),
     python_requires  = '>=' + cfg['min_python'],
     long_description = open('README.md').read(),
