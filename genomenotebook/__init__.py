@@ -1,4 +1,4 @@
-__version__ = "0.4.4"
+__version__ = "0.4.3"
 
 from .js_callback_code import get_example_data_dir
 from .browser import GenomeBrowser
