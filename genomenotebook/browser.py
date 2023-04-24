@@ -38,6 +38,8 @@ try: #pyBigWig cannot be installed on Windows. This might make it possible for w
     import pyBigWig
 except ImportError:
     pyBigWig = None
+    
+import warnings
 
 # %% ../nbs/01_browser.ipynb 6
 class GenomeBrowser:
@@ -81,7 +83,7 @@ class GenomeBrowser:
         if init_pos == None:
             self.init_pos=sum(self.bounds)//2
         elif init_pos>self.bounds[1] or init_pos<self.bounds[0]:
-            print("WARNING: Requested an initial position outside of the browser bounds")
+            warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos=sum(self.bounds)//2
         else:
             self.init_pos=init_pos
@@ -120,9 +122,11 @@ class GenomeBrowser:
                                             bounds = self.bounds)
         
         genes = get_genes_from_annotation(annotation) 
+        
+        #This contains the glyphs plotted by bokeh
         self.glyph_source = ColumnDataSource(get_gene_patches(genes, x_range.start, x_range.end))
 
-        #This will contain the glyphs plotted by bokeh
+        #This contains the positions of the glyphs plotted by bokeh
         loaded_glyph_source = ColumnDataSource({"start":[x_range.start],"end":[x_range.end], "range":[self.max_glyph_loading_range]})
 
         #This contains the glyphs for the whole genome
@@ -210,7 +214,7 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/01_browser.ipynb 11
+# %% ../nbs/01_browser.ipynb 12
 class Track:
     def __init__(self,
                  height: int = 200, #size of the track
@@ -225,7 +229,7 @@ class Track:
         
 
 
-# %% ../nbs/01_browser.ipynb 13
+# %% ../nbs/01_browser.ipynb 14
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200 #size of the track
@@ -239,42 +243,56 @@ def add_track(self:GenomeBrowser,
     return t
     
 
-# %% ../nbs/01_browser.ipynb 16
+# %% ../nbs/01_browser.ipynb 17
+@patch
+def filter_source(self:Track,
+                  source,
+                  pos):
+    source=source.loc[(self.bounds[0] < source[pos]) & (source[pos] < self.bounds[1])]
+    if len(source)>10**5:
+        warnings.warn("You are trying to plot more than 10^5 glyphs, this might crash your memory. \
+        Consider using bounds or reducing the number of datapoints.")
+    return source
+
+# %% ../nbs/01_browser.ipynb 18
 @patch
 def line(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
+         **kwargs #enables to pass keyword arguments used by the Bokeh function
         ):
-    source=source.loc[(self.bounds[0] < source[pos]) & (source[pos] < self.bounds[1])]
-    self.fig.line(source=source, x=pos, y=y)
+    source=self.filter_source(source, pos)
+    
+    self.fig.line(source=source, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/01_browser.ipynb 19
+# %% ../nbs/01_browser.ipynb 21
 from bokeh.transform import factor_cmap
 
-# %% ../nbs/01_browser.ipynb 20
+# %% ../nbs/01_browser.ipynb 22
 @patch
 def scatter(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
          factors: str = None, #name of a column of values to be used as factors
+         **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
-    source=source.loc[(self.bounds[0] < source[pos]) & (source[pos] < self.bounds[1])]
+    source=self.filter_source(source, pos)
     
     if factors!=None:
         color=factor_cmap(factors,"Category10_3",tuple(set(source[factors].values)))
         
-        self.fig.scatter(source=source, x=pos, y=y, color=color, legend_group=factors)
+        self.fig.scatter(source=source, x=pos, y=y, color=color, legend_group=factors, **kwargs)
 
         self.fig.legend.location = "top_left"
         self.fig.legend.title = "ori"
     else:
-        self.fig.scatter(source=source, x=pos, y=y)
+        self.fig.scatter(source=source, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/01_browser.ipynb 24
+# %% ../nbs/01_browser.ipynb 26
 @patch
 def bar(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -282,18 +300,19 @@ def bar(self:Track,
          y: str, #name of the column containing the data to be plotted on the y-axis
          z: str = None, #name of a column containing numerical data rendered as a linear color map (cannot be used for line plots)
          factors: str = None, #name of a column of values to be used as factors
+         **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
-    source=source.loc[(self.bounds[0] < source[pos]) & (source[pos] < self.bounds[1])]
+    source=self.filter_source(source, pos)
     
     if factors!=None:
         color=factor_cmap(factors,"Category10_3",tuple(set(source[factors].values)))
         
-        self.fig.vbar(source=source, x=pos, top=y, color=color, legend_group=factors)
+        self.fig.vbar(source=source, x=pos, top=y, color=color, legend_group=factors, **kwargs)
 
         self.fig.legend.location = "top_left"
         self.fig.legend.title = "ori"
     elif z!=None:
         pass
     else:
-        self.fig.vbar(source=source, x=pos, top=y)
+        self.fig.vbar(source=source, x=pos, top=y, **kwargs)
         
