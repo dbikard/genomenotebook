@@ -144,7 +144,7 @@ def get_genes_from_annotation(annotation):
     
     return genes
 
-# %% ../nbs/02_utils.ipynb 17
+# %% ../nbs/02_utils.ipynb 16
 Y_RANGE = (-2, 2)
 def get_y_range() -> tuple:
     """Accessor that returns the Y range for the genome browser plot
@@ -168,7 +168,7 @@ def get_all_glyphs(genes,bounds:tuple):
     
     return all_glyphs
 
-# %% ../nbs/02_utils.ipynb 18
+# %% ../nbs/02_utils.ipynb 17
 def rect_patch(genes_region):
     y_min, y_max = gene_y_range
     xs = list(
@@ -198,13 +198,13 @@ def rect_patch(genes_region):
         color=color,
     )
 
-# %% ../nbs/02_utils.ipynb 19
+# %% ../nbs/02_utils.ipynb 18
 def arrow_patch(genes_region):
     arr_plus = get_arrow_patch(genes_region[genes_region["strand"] == "+"], "+")
     arr_minus = get_arrow_patch(genes_region[genes_region["strand"] == "-"], "-")
     return dict([(k, arr_plus[k] + arr_minus[k]) for k in arr_plus.keys()])
 
-# %% ../nbs/02_utils.ipynb 20
+# %% ../nbs/02_utils.ipynb 19
 gene_y_range = (-1.5, -1)
 
 def get_arrow_patch(genes_region, ori="+"):
@@ -251,7 +251,7 @@ def get_arrow_patch(genes_region, ori="+"):
         color=color,
     )
 
-# %% ../nbs/02_utils.ipynb 21
+# %% ../nbs/02_utils.ipynb 20
 def get_gene_patches(genes, left, right):
     genes_region = genes[
         (genes["right"] > left)
