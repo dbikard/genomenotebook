@@ -104,7 +104,7 @@ import re
 # %% ../nbs/02_utils.ipynb 11
 def extract_attribute(input_str:str, #attribute string to parse
                       attr_name:str, #name of the attribute to extract
-                     ) -> dict:
+                     ) -> str:
     """Extracts the attribute called attr_name from the GFF attributes string"""
     
     pattern = f"[{attr_name[0].lower()}{attr_name[0].upper()}]{attr_name[1:]}=(?P<{attr_name}>[^;]+)"
