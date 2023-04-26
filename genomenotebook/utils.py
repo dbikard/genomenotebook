@@ -105,6 +105,7 @@ import re
 def extract_attribute(input_str:str, #attribute string to parse
                       attr_name:str, #name of the attribute to extract
                      ) -> dict:
+    """Extracts the attribute called attr_name from the GFF attributes string"""
     
     pattern = f"[{attr_name[0].lower()}{attr_name[0].upper()}]{attr_name[1:]}=(?P<{attr_name}>[^;]+)"
     match = re.search(pattern, input_str)
@@ -113,9 +114,11 @@ def extract_attribute(input_str:str, #attribute string to parse
     else:
         return None
 
-# %% ../nbs/02_utils.ipynb 14
+# %% ../nbs/02_utils.ipynb 15
 def get_genes_from_annotation(annotation):
-
+    """Filters annotations to keep only features of type CDS, repeat_region, ncRNA, rRNA and tRNA.
+       Extracts gene, locus_tag and product attributes as columns.
+    """
     genes = annotation[
         annotation.type.isin(["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"])
     ].copy()
@@ -144,7 +147,7 @@ def get_genes_from_annotation(annotation):
     
     return genes
 
-# %% ../nbs/02_utils.ipynb 16
+# %% ../nbs/02_utils.ipynb 17
 Y_RANGE = (-2, 2)
 def get_y_range() -> tuple:
     """Accessor that returns the Y range for the genome browser plot
@@ -168,7 +171,7 @@ def get_all_glyphs(genes,bounds:tuple):
     
     return all_glyphs
 
-# %% ../nbs/02_utils.ipynb 17
+# %% ../nbs/02_utils.ipynb 18
 def rect_patch(genes_region):
     y_min, y_max = gene_y_range
     xs = list(
@@ -198,13 +201,13 @@ def rect_patch(genes_region):
         color=color,
     )
 
-# %% ../nbs/02_utils.ipynb 18
+# %% ../nbs/02_utils.ipynb 19
 def arrow_patch(genes_region):
     arr_plus = get_arrow_patch(genes_region[genes_region["strand"] == "+"], "+")
     arr_minus = get_arrow_patch(genes_region[genes_region["strand"] == "-"], "-")
     return dict([(k, arr_plus[k] + arr_minus[k]) for k in arr_plus.keys()])
 
-# %% ../nbs/02_utils.ipynb 19
+# %% ../nbs/02_utils.ipynb 20
 gene_y_range = (-1.5, -1)
 
 def get_arrow_patch(genes_region, ori="+"):
@@ -251,7 +254,7 @@ def get_arrow_patch(genes_region, ori="+"):
         color=color,
     )
 
-# %% ../nbs/02_utils.ipynb 20
+# %% ../nbs/02_utils.ipynb 21
 def get_gene_patches(genes, left, right):
     genes_region = genes[
         (genes["right"] > left)
