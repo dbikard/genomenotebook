@@ -28,7 +28,12 @@ from bokeh.plotting import show, figure
 from bokeh.layouts import column, row
 
 from Bio import SeqIO
-from .js_callback_code import x_range_change_callback_code, search_callback_code, get_example_data_dir
+from genomenotebook.js_callback_code import (
+    x_range_change_callback_code, 
+    search_callback_code, 
+    track_callback_code,
+    get_example_data_dir
+)
 from bokeh.io import output_notebook
 import numpy as np
 import pandas as pd
@@ -156,7 +161,7 @@ class GenomeBrowser:
                     width=600, width_policy="fixed",
                     styles = sty
                     )
-
+        
         xcb = CustomJS(
             args={
                 "x_range": p.x_range,
@@ -223,6 +228,10 @@ class Track:
                           y_axis_location="right", #this is required in order to keep a proper alignment with the sequence
                           output_backend=output_backend)
         self.fig.xaxis[0].formatter = NumeralTickFormatter(format="0,0")
+        self.track_loaded_data = None
+        self.track_all_data = None
+        self.loaded_range = None
+        
         
 
 
@@ -238,32 +247,53 @@ def add_track(self:GenomeBrowser,
     t.fig.x_range = self.x_range
     t.fig.frame_width = self.frame_width
     t.bounds = self.bounds
+    t.loaded_range = ColumnDataSource(self.loaded_range.data)
+    t.max_glyph_loading_range = self.max_glyph_loading_range
     self.tracks.append(t)
     return t
     
 
 # %% ../nbs/01_browser.ipynb 18
 @patch
-def filter_source(self:Track,
-                  source,
-                  pos):
-    source=source.loc[(self.bounds[0] < source[pos]) & (source[pos] < self.bounds[1])]
-    if len(source)>10**5:
+def _set_track_data_source(self:Track, data, pos, columns):
+    columns=[c for c in columns if c] #some arguments can be None => remove them
+    data=data.loc[(self.bounds[0] < data[pos]) & (data[pos] < self.bounds[1]),
+                  [pos]+columns].copy()
+    data=data.sort_values("pos")
+    if len(data)>10**5:
         warnings.warn("You are trying to plot more than 10^5 glyphs, this might crash your memory. \
         Consider using bounds or reducing the number of datapoints.")
-    return source
+        
+    self.all_data=ColumnDataSource(data)
+    self.loaded_data=ColumnDataSource(
+        data.loc[(self.fig.x_range.start - self.loaded_range.data["start"][0] < data[pos]
+                 ) & (
+                 data[pos] < self.fig.x_range.end + self.loaded_range.data["end"][0])]
+    )
+    
+    xcb = CustomJS(
+            args = {
+                "x_range": self.fig.x_range,
+                "all_data":self.all_data,
+                "loaded_data": self.loaded_data,
+                "track_loaded_range":self.loaded_range,
+            },
+            code = track_callback_code
+        )
+
+    self.fig.x_range.js_on_change('start', xcb)
+
 
 # %% ../nbs/01_browser.ipynb 19
 @patch
 def line(self:Track,
-         source: pd.DataFrame, #pandas DataFrame containing the data
+         data: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
          **kwargs #enables to pass keyword arguments used by the Bokeh function
         ):
-    source=self.filter_source(source, pos)
-    
-    self.fig.line(source=source, x=pos, y=y, **kwargs)
+    self._set_track_data_source(data, pos, columns=[y])
+    self.fig.line(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
 # %% ../nbs/01_browser.ipynb 22
@@ -272,44 +302,44 @@ from bokeh.transform import factor_cmap
 # %% ../nbs/01_browser.ipynb 23
 @patch
 def scatter(self:Track,
-         source: pd.DataFrame, #pandas DataFrame containing the data
+         data: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
          factors: str = None, #name of a column of values to be used as factors
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
-    source=self.filter_source(source, pos)
+    self._set_track_data_source(data, pos, columns=[y,factors])
     
     if factors!=None:
-        color=factor_cmap(factors,"Category10_3",tuple(set(source[factors].values)))
+        color=factor_cmap(factors,"Category10_3",tuple(set(data[factors].values)))
         
-        self.fig.scatter(source=source, x=pos, y=y, color=color, legend_group=factors, **kwargs)
-
+        self.fig.scatter(source=self.loaded_data, x=pos, y=y, color=color, legend_group=factors, **kwargs)
+        
+        self.fig.legend.title = factors
         self.fig.legend.location = "top_left"
-        self.fig.legend.title = "ori"
     else:
-        self.fig.scatter(source=source, x=pos, y=y, **kwargs)
+        self.fig.scatter(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
 # %% ../nbs/01_browser.ipynb 27
 @patch
 def bar(self:Track,
-         source: pd.DataFrame, #pandas DataFrame containing the data
+         data: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
          z: str = None, #name of a column containing numerical data rendered as a linear color map (cannot be used for line plots)
          factors: str = None, #name of a column of values to be used as factors
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
-    source=self.filter_source(source, pos)
+    self._set_track_data_source(data, pos, columns=[y,factors])
     
     if factors!=None:
-        color=factor_cmap(factors,"Category10_3",tuple(set(source[factors].values)))
+        color=factor_cmap(factors,"Category10_3",tuple(set(data[factors].values)))
         
-        self.fig.vbar(source=source, x=pos, top=y, color=color, legend_group=factors, **kwargs)
+        self.fig.vbar(source=self.loaded_data, x=pos, top=y, color=color, legend_group=factors, **kwargs)
 
         self.fig.legend.location = "top_left"
-        self.fig.legend.title = "ori"
+        self.fig.legend.title = factors
     elif z!=None:
         pass
     else:
