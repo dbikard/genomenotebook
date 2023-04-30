@@ -57,10 +57,10 @@ class GenomeBrowser:
         
         self.genome_path = genome_path
         self.gff_path = gff_path
-        self.rec = self.get_sequence_record(seq_id)            
+        self.rec = self._get_sequence_record(seq_id)            
         self.seq_len = len(self.rec.seq) #length of the reference sequence before bounds are applied
-        self.apply_bounds(bounds)
-        self.set_init_pos(init_pos)
+        self._apply_bounds(bounds)
+        self._set_init_pos(init_pos)
 
         self.init_win = min(init_win,self.bounds[1]-self.bounds[0])
 
@@ -68,13 +68,14 @@ class GenomeBrowser:
         self.max_glyph_loading_range = 20000
         self.frame_width = 600
 
-        self.elements = self.get_browser(show_seq=show_seq)
-        self.activate_search(search)
+        self.elements = self._get_browser(**kwargs)
+        if search:
+            self.elements = [self._get_search_box()]+self.elements
+            
         self.tracks=[]
-
     
     
-    def set_init_pos(self, init_pos):
+    def _set_init_pos(self, init_pos):
         if init_pos == None:
             self.init_pos=sum(self.bounds)//2
         elif init_pos>self.bounds[1] or init_pos<self.bounds[0]:
@@ -83,7 +84,7 @@ class GenomeBrowser:
         else:
             self.init_pos=init_pos
     
-    def apply_bounds(self, bounds):
+    def _apply_bounds(self, bounds):
         if bounds == None:
             self.bounds=(0,self.seq_len)
         else:
@@ -91,7 +92,7 @@ class GenomeBrowser:
         
         self.rec.seq=self.rec.seq[self.bounds[0]:self.bounds[1]]
 
-    def get_sequence_record(self, seq_id):
+    def _get_sequence_record(self, seq_id):
         if seq_id==None: #when no seq_id is provided we take the first element
             rec = next(SeqIO.parse(self.genome_path, 'fasta'))
         else:
@@ -105,7 +106,7 @@ class GenomeBrowser:
                 warnings.warn("seq_id not found in fasta file")
         return rec
 
-    def get_browser(self,show_seq=True):
+    def _get_browser(self, **kwargs):
 
         semi_win = self.init_win / 2
         x_range = Range1d(
@@ -125,12 +126,15 @@ class GenomeBrowser:
         self.glyph_source = ColumnDataSource(get_gene_patches(genes, x_range.start, x_range.end))
 
         #This contains the positions of the glyphs plotted by bokeh
-        loaded_glyph_source = ColumnDataSource({"start":[x_range.start],"end":[x_range.end], "range":[self.max_glyph_loading_range]})
+        self.loaded_range = ColumnDataSource({"start":[x_range.start],
+                                                "end":[x_range.end], 
+                                                "range":[self.max_glyph_loading_range]})
 
         #This contains the glyphs for the whole genome
         self.all_glyphs=get_all_glyphs(genes, self.bounds)
 
-        p = create_genome_browser_plot(self.glyph_source, x_range, output_backend="webgl")
+        p = create_genome_browser_plot(self.glyph_source, 
+                                       x_range, **kwargs)
         p.frame_width=self.frame_width
 
         sty=Styles(font_size='14px',
@@ -160,7 +164,7 @@ class GenomeBrowser:
                 "all_glyphs":self.all_glyphs,
                 "glyph_source": self.glyph_source,
                 "div": self.div,
-                "loaded_glyph_source":loaded_glyph_source,
+                "loaded_range":self.loaded_range,
             },
             code=x_range_change_callback_code
         )
@@ -173,16 +177,8 @@ class GenomeBrowser:
             return [p,self.div]
         else:
             return [p]
-
-    def activate_search(self,search):
-        if search:
-            self.search = self.get_search_box()
-            self.elements = [self.search]+self.elements
-        else:
-            self.search = None
-            
-    def get_search_box(self):
-
+        
+    def _get_search_box(self):
         ## Create a text input widget for search
         text_input = AutocompleteInput(completions=self.all_glyphs["names"], value="")
 
@@ -191,18 +187,13 @@ class GenomeBrowser:
         h=Rect(x='x',y=-2,width='width',height=self.gene_track.height,fill_color='green',fill_alpha=0.2,line_alpha=0)
         self.gene_track.add_glyph(search_span_source, h)
 
-        ## Adding the ability to display the sequence when zooming in
-        sequence = {
-            'seq': str(self.rec.seq).upper(),
-            'bounds':self.bounds
-        }
-
         call_back_search = CustomJS(
             args={
                 "x_range": self.x_range,
                 "glyph_source": self.glyph_source,
-                "sequence": sequence,
+                "bounds": self.bounds,
                 "all_glyphs": self.all_glyphs,
+                "loaded_range": self.loaded_range,
                 "text_input": text_input,
                 "search_span_source": search_span_source,
                 "div": self.div,
@@ -219,28 +210,31 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/01_browser.ipynb 12
+# %% ../nbs/01_browser.ipynb 13
 class Track:
     def __init__(self,
                  height: int = 200, #size of the track
-                ):
+                 output_backend="webgl" 
+                ):        
         self.height = height
         self.fig = figure(tools="xwheel_zoom,xpan,save,reset",
                           active_scroll="xwheel_zoom",
                           height=height,
                           y_axis_location="right", #this is required in order to keep a proper alignment with the sequence
-                          output_backend="webgl")
+                          output_backend=output_backend)
         self.fig.xaxis[0].formatter = NumeralTickFormatter(format="0,0")
         
 
 
-# %% ../nbs/01_browser.ipynb 14
+# %% ../nbs/01_browser.ipynb 15
 @patch
 def add_track(self:GenomeBrowser,
-             height:int = 200 #size of the track
+             height:int = 200, #size of the track
+             output_backend="webgl", #can be set to webgl (more efficient) or svg (for figure export)
              ) -> Track:
     """Adds a track to the the GenomeBrowser. Ensures that the x_range are shared and figure widths are identical."""
-    t = Track(height=height)
+    t = Track(height=height, 
+              output_backend=output_backend)
     t.fig.x_range = self.x_range
     t.fig.frame_width = self.frame_width
     t.bounds = self.bounds
@@ -248,7 +242,7 @@ def add_track(self:GenomeBrowser,
     return t
     
 
-# %% ../nbs/01_browser.ipynb 17
+# %% ../nbs/01_browser.ipynb 18
 @patch
 def filter_source(self:Track,
                   source,
@@ -259,7 +253,7 @@ def filter_source(self:Track,
         Consider using bounds or reducing the number of datapoints.")
     return source
 
-# %% ../nbs/01_browser.ipynb 18
+# %% ../nbs/01_browser.ipynb 19
 @patch
 def line(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -272,10 +266,10 @@ def line(self:Track,
     self.fig.line(source=source, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/01_browser.ipynb 21
+# %% ../nbs/01_browser.ipynb 22
 from bokeh.transform import factor_cmap
 
-# %% ../nbs/01_browser.ipynb 22
+# %% ../nbs/01_browser.ipynb 23
 @patch
 def scatter(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data
@@ -297,7 +291,7 @@ def scatter(self:Track,
         self.fig.scatter(source=source, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/01_browser.ipynb 26
+# %% ../nbs/01_browser.ipynb 27
 @patch
 def bar(self:Track,
          source: pd.DataFrame, #pandas DataFrame containing the data

@@ -155,7 +155,7 @@ def get_y_range() -> tuple:
     return Y_RANGE
 
 
-def get_all_glyphs(genes,bounds:tuple):
+def get_all_glyphs(genes,bounds:tuple) -> dict:
     all_glyphs=get_gene_patches(genes, bounds[0], bounds[1])
 
     ks=list(all_glyphs.keys())
