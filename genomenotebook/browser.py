@@ -54,7 +54,48 @@ class GenomeBrowser:
                  search: bool = True, #enables a search bar to lookup a gene name or a DNA sequence
                  **kwargs):
         
-        self.genome_path=genome_path
+        self.genome_path = genome_path
+        self.gff_path = gff_path
+        self.rec = self.get_sequence_record(seq_id)            
+        self.seq_len = len(self.rec.seq) #length of the reference sequence before bounds are applied
+        self.apply_bounds(bounds)
+        self.set_init_pos(init_pos)
+
+        self.init_win = min(init_win,self.bounds[1]-self.bounds[0])
+
+        self.show_seq = show_seq
+        self.max_glyph_loading_range = 20000
+        self.frame_width = 600
+
+        self.elements = self.get_browser(show_seq=show_seq)
+        self.activate_search(search)
+        self.tracks=[]
+
+    def activate_search(self,search):
+        if search:
+            self.search = self.get_search_box()
+            self.elements = [self.search]+self.elements
+        else:
+            self.search = None
+    
+    def set_init_pos(self, init_pos):
+        if init_pos == None:
+            self.init_pos=sum(self.bounds)//2
+        elif init_pos>self.bounds[1] or init_pos<self.bounds[0]:
+            warnings.warn("Requested an initial position outside of the browser bounds")
+            self.init_pos=sum(self.bounds)//2
+        else:
+            self.init_pos=init_pos
+    
+    def apply_bounds(self, bounds):
+        if bounds == None:
+            self.bounds=(0,self.seq_len)
+        else:
+            self.bounds=bounds
+        
+        self.rec.seq=self.rec.seq[self.bounds[0]:self.bounds[1]]
+
+    def get_sequence_record(self, seq_id):
         if seq_id==None: #when no seq_id is provided we take the first element
             rec = next(SeqIO.parse(self.genome_path, 'fasta'))
         else:
@@ -65,47 +106,8 @@ class GenomeBrowser:
                     break
             
             if not rec_found:
-                print("seq_id not found in fasta file")
-                    
-        self.seq_id = rec.id
-        self.seq = rec.seq
-        self.seq_len = len(rec.seq)
-        
-        if bounds == None:
-            self.bounds=(0,self.seq_len)
-        else:
-            self.bounds=bounds
-        
-        self.seq=self.seq[self.bounds[0]:self.bounds[1]]
-   
-        self.gff_path=gff_path
-
-        if init_pos == None:
-            self.init_pos=sum(self.bounds)//2
-        elif init_pos>self.bounds[1] or init_pos<self.bounds[0]:
-            warnings.warn("Requested an initial position outside of the browser bounds")
-            self.init_pos=sum(self.bounds)//2
-        else:
-            self.init_pos=init_pos
-
-        self.init_win=min(init_win,self.bounds[1]-self.bounds[0])
-
-        self.show_seq=show_seq
-        self.max_glyph_loading_range=20000
-        self.frame_width=600
-
-        
-
-        self.elements=self.get_browser(show_seq=show_seq)
-
-        if search:
-            self.search=self.get_search_box()
-            self.elements=[self.search]+self.elements
-        else:
-            self.search=None
-            
-        self.tracks=[]
-
+                warnings.warn("seq_id not found in fasta file")
+        return rec
 
     def get_browser(self,show_seq=True):
 
@@ -118,7 +120,7 @@ class GenomeBrowser:
         )
         
         annotation = get_genome_annotations(self.gff_path,
-                                            seq_id = self.seq_id,
+                                            seq_id = self.rec.id,
                                             bounds = self.bounds)
         
         genes = get_genes_from_annotation(annotation) 
@@ -146,7 +148,7 @@ class GenomeBrowser:
         
         ## Adding the ability to display the sequence when zooming in
         sequence = {
-            'seq': str(self.seq).upper(),
+            'seq': str(self.rec.seq).upper(),
             'bounds':self.bounds
         }
 
@@ -188,7 +190,7 @@ class GenomeBrowser:
 
         ## Adding the ability to display the sequence when zooming in
         sequence = {
-            'seq': str(self.seq).upper(),
+            'seq': str(self.rec.seq).upper(),
             'bounds':self.bounds
         }
 
