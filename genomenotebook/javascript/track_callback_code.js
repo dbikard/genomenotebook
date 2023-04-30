@@ -23,5 +23,5 @@ if (x_range.start<track_loaded_range.data.start[0]+2000 || x_range.end>track_loa
     //console.log(ix_start, all_data.data['pos'][ix_start], ix_stop, all_data.data['pos'][ix_stop], track_loaded_range.data.end[0]);
     loaded_data.change.emit();
     track_loaded_range.change.emit();
-    //console.log(loaded_range);
+    //console.log(loaded_data.data);
 }
