@@ -18,6 +18,7 @@ from bokeh.models import (
     ColumnDataSource,
     LabelSet, 
     TextInput,
+    AutocompleteInput,
     Rect,
     Div,
     Styles,
@@ -71,12 +72,7 @@ class GenomeBrowser:
         self.activate_search(search)
         self.tracks=[]
 
-    def activate_search(self,search):
-        if search:
-            self.search = self.get_search_box()
-            self.elements = [self.search]+self.elements
-        else:
-            self.search = None
+    
     
     def set_init_pos(self, init_pos):
         if init_pos == None:
@@ -178,10 +174,17 @@ class GenomeBrowser:
         else:
             return [p]
 
+    def activate_search(self,search):
+        if search:
+            self.search = self.get_search_box()
+            self.elements = [self.search]+self.elements
+        else:
+            self.search = None
+            
     def get_search_box(self):
 
         ## Create a text input widget for search
-        text_input = TextInput(value="")
+        text_input = AutocompleteInput(completions=self.all_glyphs["names"], value="")
 
         ## Adding BoxAnnotation to highlight search results
         search_span_source = ColumnDataSource({"x":[],"width":[]})#"y":[]
