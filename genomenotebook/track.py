@@ -53,7 +53,7 @@ class Track:
         
 
 
-# %% ../nbs/API/01_track.ipynb 11
+# %% ../nbs/API/01_track.ipynb 12
 @patch
 def _set_track_data_source(self:Track, data, pos, columns):
     columns=[c for c in columns if c] #some arguments can be None => remove them
@@ -84,7 +84,7 @@ def _set_track_data_source(self:Track, data, pos, columns):
     self.fig.x_range.js_on_change('start', xcb)
 
 
-# %% ../nbs/API/01_track.ipynb 12
+# %% ../nbs/API/01_track.ipynb 13
 @patch
 def line(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -96,10 +96,10 @@ def line(self:Track,
     self.fig.line(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/API/01_track.ipynb 15
+# %% ../nbs/API/01_track.ipynb 16
 from bokeh.transform import factor_cmap
 
-# %% ../nbs/API/01_track.ipynb 16
+# %% ../nbs/API/01_track.ipynb 17
 @patch
 def scatter(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -121,7 +121,7 @@ def scatter(self:Track,
         self.fig.scatter(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/API/01_track.ipynb 20
+# %% ../nbs/API/01_track.ipynb 22
 @patch
 def bar(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data

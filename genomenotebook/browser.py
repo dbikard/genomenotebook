@@ -228,7 +228,7 @@ def add_track(self:GenomeBrowser,
              height:int = 200, #size of the track
              output_backend="webgl", #can be set to webgl (more efficient) or svg (for figure export)
              ) -> Track:
-    """Adds a track to the the GenomeBrowser. Ensures that the x_range are shared and figure widths are identical."""
+    """Adds a track to the GenomeBrowser. Ensures that the x_range are shared and figure widths are identical."""
     t = Track(height=height, 
               output_backend=output_backend)
     t.fig.x_range = self.x_range
