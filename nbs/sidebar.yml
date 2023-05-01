@@ -3,5 +3,8 @@ website:
     contents:
       - index.ipynb
       - 00_Examples.ipynb
-      - 01_browser.ipynb
-      - 02_utils.ipynb
+      - section: API
+        contents:
+          - API/00_browser.ipynb
+          - API/01_track.ipynb
+          - API/02_utils.ipynb
