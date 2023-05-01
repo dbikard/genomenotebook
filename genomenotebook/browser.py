@@ -42,11 +42,6 @@ import numpy as np
 import pandas as pd
 import os
 import itertools
-
-try: #pyBigWig cannot be installed on Windows. This might make it possible for windows users to still install
-    import pyBigWig
-except ImportError:
-    pyBigWig = None
     
 import warnings
 

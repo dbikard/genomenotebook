@@ -25,7 +25,7 @@ import pandas as pd
 from bokeh.io import output_notebook
 import os
 
-try: #pyBigWig cannot be installed on Windows. This might make it possible for windows users to still install
+try: #pyBigWig cannot be installed on Windows
     import pyBigWig
 except ImportError:
     pyBigWig = None
