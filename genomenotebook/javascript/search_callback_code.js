@@ -1,5 +1,4 @@
 
-div.text="";
 let searchString = cb_obj.value.toUpperCase();
 let pos = null;
 
@@ -30,3 +29,4 @@ glyph_source.change.emit()
 loaded_range.data.start[0] = all_glyphs['xs'][ix_start][0];
 loaded_range.data.end[0] = all_glyphs['xs'][ix_stop][3];
 loaded_range.change.emit()
+div.text="";

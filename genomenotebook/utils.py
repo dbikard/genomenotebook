@@ -44,7 +44,7 @@ def parse_gff(gff_path)->pd.DataFrame:
     return df
 
 # %% ../nbs/API/02_utils.ipynb 6
-from .js_callback_code import get_example_data_dir
+from .data import get_example_data_dir
 import os
 
 # %% ../nbs/API/02_utils.ipynb 8

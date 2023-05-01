@@ -13,12 +13,12 @@ from genomenotebook.utils import (
     create_genome_browser_plot,
     get_all_glyphs)
 
-from genomenotebook.js_callback_code import (
+from genomenotebook.javascript import (
     x_range_change_callback_code, 
     search_callback_code, 
     track_callback_code,
-    get_example_data_dir
 )
+from .data import get_example_data_dir
 from bokeh.models import (
     CustomJS,
     Range1d,
@@ -212,10 +212,10 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/API/00_browser.ipynb 13
+# %% ../nbs/API/00_browser.ipynb 14
 from .track import Track
 
-# %% ../nbs/API/00_browser.ipynb 14
+# %% ../nbs/API/00_browser.ipynb 15
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200, #size of the track
