@@ -43,7 +43,7 @@ import itertools
     
 import warnings
 
-# %% ../nbs/API/00_browser.ipynb 6
+# %% ../nbs/API/00_browser.ipynb 5
 class GenomeBrowser:
     """Initialize a GenomeBrowser object."""
     def __init__(self,
@@ -74,7 +74,7 @@ class GenomeBrowser:
         if search:
             self.elements = [self._get_search_box()]+self.elements
             
-        self.tracks=[]
+        self.tracks=[] 
     
     
     def _set_init_pos(self, init_pos):
@@ -212,10 +212,10 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/API/00_browser.ipynb 14
+# %% ../nbs/API/00_browser.ipynb 13
 from .track import Track
 
-# %% ../nbs/API/00_browser.ipynb 15
+# %% ../nbs/API/00_browser.ipynb 14
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200, #size of the track

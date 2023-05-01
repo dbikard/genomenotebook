@@ -45,4 +45,5 @@ d = { 'settings': { 'branch': 'main',
                                       'genomenotebook.utils.get_genome_annotations': ( 'API/utils.html#get_genome_annotations',
                                                                                        'genomenotebook/utils.py'),
                                       'genomenotebook.utils.get_y_range': ('API/utils.html#get_y_range', 'genomenotebook/utils.py'),
+                                      'genomenotebook.utils.parse_gff': ('API/utils.html#parse_gff', 'genomenotebook/utils.py'),
                                       'genomenotebook.utils.rect_patch': ('API/utils.html#rect_patch', 'genomenotebook/utils.py')}}}
