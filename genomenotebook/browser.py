@@ -36,8 +36,6 @@ from bokeh.layouts import column, row
 
 from Bio import SeqIO
 
-
-from bokeh.io import output_notebook
 import numpy as np
 import pandas as pd
 import os

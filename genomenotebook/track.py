@@ -21,8 +21,6 @@ from genomenotebook.js_callback_code import (
 )
 
 import pandas as pd
-
-from bokeh.io import output_notebook
 import os
 
 try: #pyBigWig cannot be installed on Windows
