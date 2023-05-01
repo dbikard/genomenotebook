@@ -7,12 +7,11 @@ let pos = null;
 let ix = all_glyphs['names'].findIndex((element) => element.toUpperCase().includes(searchString));
 let g = all_glyphs['names'].find((element) => element.toUpperCase().includes(searchString));
 pos = all_glyphs['xs'][ix][0];
+
+//Define new field of view
 x_range.start = (pos - 5000 < bounds[0]) ? bounds[0] : pos - 5000;
 x_range.end = (pos + 5000 > bounds[1]) ? bounds[1] : pos + 5000;
-
-//Select the glyph elements in the 20kb range of the searched gene
-const x_start = (pos - 20000 < bounds[0]) ? bounds[0] : pos - 20000;
-const x_end = (pos + 20000 > bounds[1]) ? bounds[1] : pos + 20000;
+x_range.change.emit()
 
 //find the index of element 20kb away
 const max_glyph_loading_range=loaded_range.data['range'][0]
@@ -26,10 +25,8 @@ const ix_stop = ix_stop_find === -1 ? last_ix : ix_stop_find; // takes the last 
 for (let attr in all_glyphs) {
   glyph_source.data[attr] = all_glyphs[attr].slice(ix_start, ix_stop + 1);
 }
-
-loaded_range.data['start'] = all_glyphs['xs'][ix_start][0];
-loaded_range.data['end'] = all_glyphs['xs'][ix_stop][3];
-
 glyph_source.change.emit()
-x_range.change.emit()
+
+loaded_range.data.start[0] = all_glyphs['xs'][ix_start][0];
+loaded_range.data.end[0] = all_glyphs['xs'][ix_stop][3];
 loaded_range.change.emit()
