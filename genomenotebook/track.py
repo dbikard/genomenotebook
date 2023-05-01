@@ -111,7 +111,7 @@ def scatter(self:Track,
     self._set_track_data_source(data, pos, columns=[y,factors])
     
     if factors!=None:
-        color=factor_cmap(factors,"Category10_3",tuple(set(data[factors].values)))
+        color=factor_cmap(factors,"Category10_10",tuple(set(data[factors].values)))
         
         self.fig.scatter(source=self.loaded_data, x=pos, y=y, color=color, legend_group=factors, **kwargs)
         
