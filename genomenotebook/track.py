@@ -14,12 +14,10 @@ from bokeh.models import (
     NumeralTickFormatter
 )
 
-from Bio import SeqIO
 from .javascript import track_callback_code
-from .data import get_example_data_dir
 
 import pandas as pd
-import os
+
 
 try: #pyBigWig cannot be installed on Windows
     import pyBigWig

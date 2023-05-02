@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.5.1
+Cleaned up imports
+
+
+
 ## 0.5.0
 Modified the way to deal with data files and javascript code files
 
