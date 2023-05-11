@@ -3,6 +3,7 @@ website:
     contents:
       - index.ipynb
       - 00_Examples.ipynb
+      - 01_Options.ipynb
       - section: API
         contents:
           - API/00_browser.ipynb

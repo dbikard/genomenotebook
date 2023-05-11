@@ -19,7 +19,7 @@ when zooming in.
 ``` python
 import genomenotebook as gn
 
-g=gn.GenomeBrowser(genome_path, gff_path, init_pos=10000)
+g=gn.GenomeBrowser(gff_path=gff_path, genome_path=genome_path, init_pos=10000)
 g.show()
 ```
 

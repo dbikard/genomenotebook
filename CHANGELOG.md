@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.5.2
+- It is now possible to select feature types and attributes to display.
+- GenomeBrowser plots can now be created without the need to provide the sequence fasta file. 
+
+
+
 ## 0.5.1
 Cleaned up imports
 
