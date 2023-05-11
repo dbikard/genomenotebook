@@ -41,7 +41,7 @@ def parse_gff(gff_path)->pd.DataFrame:
         # Reset the file pointer to the beginning of the file buffer
         file_buffer.seek(0)       
 
-        df=pd.read_csv(file_buffer,sep="\t",header=None)
+        df=pd.read_csv(file_buffer,sep="\t",header=None) #TODO: add skiprows option to parse large gff files faster
         df.columns=["seq_id", "source","type","start","end","score","strand","phase","attributes"]
         
     return df
