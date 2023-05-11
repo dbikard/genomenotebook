@@ -60,5 +60,4 @@ d = { 'settings': { 'branch': 'main',
                                       'genomenotebook.utils.get_y_range': ('API/utils.html#get_y_range', 'genomenotebook/utils.py'),
                                       'genomenotebook.utils.parse_gff': ('API/utils.html#parse_gff', 'genomenotebook/utils.py'),
                                       'genomenotebook.utils.set_positions': ('API/utils.html#set_positions', 'genomenotebook/utils.py'),
-                                      'genomenotebook.utils.sort_list_dict': ('API/utils.html#sort_list_dict', 'genomenotebook/utils.py'),
                                       'genomenotebook.utils.split_string': ('API/utils.html#split_string', 'genomenotebook/utils.py')}}}
