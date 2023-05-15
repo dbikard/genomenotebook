@@ -152,8 +152,8 @@ def parse_gff(gff_path:str,
             df=pd.read_csv(file_buffer,sep="\t",header=None)
             df.columns=["seq_id", "source","type","start","end","score","strand","phase","attributes"]
             df=attributes_to_columns(df)
+            df=set_positions(df)
      
-        df=set_positions(df)
         return df
 
 # %% ../nbs/API/02_utils.ipynb 16
