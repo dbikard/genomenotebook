@@ -207,7 +207,12 @@ class GenomeBrowser:
         
     def _get_search_box(self):
         ## Create a text input widget for search
-        text_input = AutocompleteInput(completions=self._all_glyphs["names"], value="")
+        completions=set()
+        for attr in self._all_glyphs:
+            if not attr in ["xs","ys","color","pos"]:
+                completions.update(set(self._all_glyphs[attr]))
+        
+        text_input = AutocompleteInput(completions=list(completions), value="")
 
         ## Adding BoxAnnotation to highlight search results
         search_span_source = ColumnDataSource({"x":[],"width":[]})#"y":[]
@@ -238,10 +243,10 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/API/00_browser.ipynb 25
+# %% ../nbs/API/00_browser.ipynb 27
 from .track import Track
 
-# %% ../nbs/API/00_browser.ipynb 26
+# %% ../nbs/API/00_browser.ipynb 28
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200, #size of the track

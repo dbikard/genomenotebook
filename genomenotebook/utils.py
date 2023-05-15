@@ -4,8 +4,7 @@
 __all__ = ['default_types', 'default_attributes', 'gene_y_range', 'default_glyphs', 'Y_RANGE', 'is_gzipped_file', 'download_file',
            'extract_attribute', 'extract_all_attributes', 'attributes_to_columns', 'set_positions', 'default_open_gz',
            'parse_gff', 'available_feature_types', 'available_attributes', 'arrow_coordinates', 'box_coordinates',
-           'get_patch_coordinates', 'get_feature_patches', 'get_y_range', 'get_all_glyphs',
-           'create_genome_browser_plot', 'split_string']
+           'get_patch_coordinates', 'split_string', 'get_feature_patches', 'get_y_range', 'create_genome_browser_plot']
 
 # %% ../nbs/API/02_utils.ipynb 4
 import numpy as np
@@ -234,6 +233,20 @@ def get_patch_coordinates(feature, # row of a pandas DataFrame extracted from a 
     
 
 # %% ../nbs/API/02_utils.ipynb 26
+def split_string(string, max_length=10):
+    if len(string) <= max_length:
+        return string
+    else:
+        split_index = max_length
+        while split_index > 0 and string[split_index] != ' ':
+            split_index -= 1
+        if split_index == 0:
+            split_index = max_length  # If no suitable breaking point found, split at max_length
+        return string[:split_index] + '\n' + split_string(string[split_index:].lstrip(), max_length)
+
+
+
+# %% ../nbs/API/02_utils.ipynb 28
 def get_feature_patches(features: pd.DataFrame, #DataFrame of the features 
                         left: int, #left limit
                         right: int, #right limit
@@ -264,12 +277,14 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
             )
     for attr in attributes:
         if attr in features.columns:
-            out.update(features[[attr]].to_dict(orient='list'))
+            values=features[attr].fillna("").astype(str)
+            out[attr]=values.to_list() #tried to split long strings here but Bokeh then ignores it 
+            
     return out
 
  
 
-# %% ../nbs/API/02_utils.ipynb 28
+# %% ../nbs/API/02_utils.ipynb 30
 Y_RANGE = (-2, 2)
 def get_y_range() -> tuple:
     """Accessor that returns the Y range for the genome browser plot
@@ -277,24 +292,7 @@ def get_y_range() -> tuple:
     return Y_RANGE
 
 
-# %% ../nbs/API/02_utils.ipynb 29
-def get_all_glyphs(genes,bounds:tuple) -> dict:
-    all_glyphs=get_gene_patches(genes, bounds[0], bounds[1])
-
-    ks=list(all_glyphs.keys())
-    ref_list_ix=ks.index('xs')
-    # Sort all the lists in the dictionary based on the values of the reference list
-    sorted_lists = sorted(zip(*[all_glyphs[k] for k in ks]), key= lambda x: x[ref_list_ix][0])
-
-    # Convert the sorted tuples back into separate lists
-    unzipped_lists = zip(*sorted_lists)
-
-    # Create a new dictionary with the same keys as the original dictionary, but with the sorted lists as values
-    all_glyphs = {k: list(t) for k, t in zip(ks, unzipped_lists)}
-    
-    return all_glyphs
-
-# %% ../nbs/API/02_utils.ipynb 30
+# %% ../nbs/API/02_utils.ipynb 31
 def create_genome_browser_plot(glyphSource, x_range, attributes=default_attributes, **kwargs):
     plot_height = kwargs.get("plot_height", 150)
     label_angle = kwargs.get("label_angle", 45)
@@ -348,17 +346,3 @@ def create_genome_browser_plot(glyphSource, x_range, attributes=default_attribut
         )
     )
     return p_annot
-
-# %% ../nbs/API/02_utils.ipynb 33
-def split_string(string, max_length=10):
-    if len(string) <= max_length:
-        return string
-    else:
-        split_index = max_length
-        while split_index > 0 and string[split_index] != ' ':
-            split_index -= 1
-        if split_index == 0:
-            split_index = max_length  # If no suitable breaking point found, split at max_length
-        return string[:split_index] + '\n' + split_string(string[split_index:].lstrip(), max_length)
-
-
