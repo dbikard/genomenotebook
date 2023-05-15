@@ -106,20 +106,23 @@ def set_positions(annotation: pd.DataFrame, # an annotation DataFrame extracted 
     return annotation
 
 # %% ../nbs/API/02_utils.ipynb 14
-default_types=["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"]
-default_attributes=["gene", "locus_tag", "product"]
-
 def default_open_gz(gff_path):
     if is_gzipped_file(gff_path):
         return gzip.open(gff_path,'rt')
     else:
         return open(gff_path,'r')
     
-def parse_gff(gff_path:str,
-                     seq_id: str=None,
-                     bounds: tuple=None,
-                     feature_types: list = None, # list of feature types to extract
-                    )->pd.DataFrame:
+
+# %% ../nbs/API/02_utils.ipynb 15
+default_types=["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"]
+default_attributes=["gene", "locus_tag", "product"]
+
+
+def parse_gff(gff_path:str, # path to the gff file
+              seq_id: str=None, # sequence id (first column of the gff)
+              bounds: tuple=None, # (left limit, right limit)
+              feature_types: list = None, # list of feature types to extract
+             )->pd.DataFrame:
     cwd = os.getcwd()
     
     with default_open_gz(gff_path) as gff_file:
@@ -156,7 +159,7 @@ def parse_gff(gff_path:str,
      
         return df
 
-# %% ../nbs/API/02_utils.ipynb 16
+# %% ../nbs/API/02_utils.ipynb 17
 def available_feature_types(gff_path):
     ftypes=set()
     with default_open_gz(gff_path) as handle:
@@ -167,15 +170,15 @@ def available_feature_types(gff_path):
                     ftypes.add(r[2])
     return ftypes
 
-# %% ../nbs/API/02_utils.ipynb 19
+# %% ../nbs/API/02_utils.ipynb 20
 def available_attributes(gff_path):
     features=parse_gff(gff_path)
     return features.columns
 
-# %% ../nbs/API/02_utils.ipynb 22
+# %% ../nbs/API/02_utils.ipynb 23
 from collections import defaultdict
 
-# %% ../nbs/API/02_utils.ipynb 23
+# %% ../nbs/API/02_utils.ipynb 24
 gene_y_range = (-1.5, -1)
 
 def arrow_coordinates(feature):
@@ -230,7 +233,7 @@ def get_patch_coordinates(feature, # row of a pandas DataFrame extracted from a 
     
     
 
-# %% ../nbs/API/02_utils.ipynb 25
+# %% ../nbs/API/02_utils.ipynb 26
 def get_feature_patches(features: pd.DataFrame, #DataFrame of the features 
                         left: int, #left limit
                         right: int, #right limit
@@ -266,7 +269,7 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
 
  
 
-# %% ../nbs/API/02_utils.ipynb 27
+# %% ../nbs/API/02_utils.ipynb 28
 Y_RANGE = (-2, 2)
 def get_y_range() -> tuple:
     """Accessor that returns the Y range for the genome browser plot
@@ -274,7 +277,7 @@ def get_y_range() -> tuple:
     return Y_RANGE
 
 
-# %% ../nbs/API/02_utils.ipynb 28
+# %% ../nbs/API/02_utils.ipynb 29
 def get_all_glyphs(genes,bounds:tuple) -> dict:
     all_glyphs=get_gene_patches(genes, bounds[0], bounds[1])
 
@@ -291,7 +294,7 @@ def get_all_glyphs(genes,bounds:tuple) -> dict:
     
     return all_glyphs
 
-# %% ../nbs/API/02_utils.ipynb 29
+# %% ../nbs/API/02_utils.ipynb 30
 def create_genome_browser_plot(glyphSource, x_range, attributes=default_attributes, **kwargs):
     plot_height = kwargs.get("plot_height", 150)
     label_angle = kwargs.get("label_angle", 45)
@@ -346,7 +349,7 @@ def create_genome_browser_plot(glyphSource, x_range, attributes=default_attribut
     )
     return p_annot
 
-# %% ../nbs/API/02_utils.ipynb 32
+# %% ../nbs/API/02_utils.ipynb 33
 def split_string(string, max_length=10):
     if len(string) <= max_length:
         return string
