@@ -16,6 +16,7 @@ tags
 token
 
 # Data downloaded for testing
+nbs/API/*.gz
 nbs/*.gz
 
 # Byte-compiled / optimized / DLL files
@@ -154,3 +155,4 @@ checklink/cookies.txt
 
 # Quarto
 .quarto
+
