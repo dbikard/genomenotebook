@@ -7,12 +7,10 @@ __all__ = ['GenomeBrowser']
 from fastcore.basics import *
 
 from genomenotebook.utils import (
-    get_genome_annotations,
-    get_features_from_annotation,
     get_feature_patches, 
     create_genome_browser_plot,
-    get_all_glyphs,
-    default_glyphs
+    default_glyphs,
+    parse_gff,
 )
 
 from genomenotebook.javascript import (
@@ -31,12 +29,8 @@ from bokeh.models import (
 from bokeh.plotting import show
 from bokeh.layouts import column
 
-from collections import defaultdict
-
 from Bio import SeqIO
 
-import itertools
-    
 import warnings
 
 # %% ../nbs/API/00_browser.ipynb 5
@@ -63,48 +57,63 @@ class GenomeBrowser:
         self.attributes = attributes
         self.feature_types = feature_types
         self.feature_name = feature_name
-        self._get_patch_dict(glyphs)
+        self._get_glyphs_dict(glyphs)
 
-        annotation = get_genome_annotations(gff_path,seq_id)
+        self.features = parse_gff(gff_path,
+                                      seq_id=seq_id,
+                                      bounds=bounds,
+                                      feature_types=feature_types
+                                     )
         
-        if self.genome_path!=None: #get the sequence record object
-            self.rec = self._get_sequence_record(seq_id)            
+        if len(self.features)>0:
+            if feature_name not in self.features.columns:
+                self.features[feature_name]=""
+                
+            self.seq_id = self.features.seq_id[0]
+
+            self._get_sequence(bounds)
+
+            if bounds == None: self.bounds=(0,self.seq_len)
+            else: self.bounds=bounds
+
+            self._set_init_pos(init_pos)
+            self.init_win = min(init_win,self.bounds[1]-self.bounds[0])
+
+
+            self.max_glyph_loading_range = 20000
+            self.frame_width = 600
+
+            self.elements = self._get_browser(**kwargs)
+            if search:
+                self.elements = [self._get_search_box()]+self.elements
+
+            self.tracks=[] 
+        
+    def _get_sequence(self, bounds):
+        if self.genome_path!=None: 
+            rec_found=False
+            for rec in SeqIO.parse(self.genome_path, 'fasta'):
+                if rec.id==self.seq_id:
+                    rec_found=True
+                    break
+
+            if not rec_found:
+                warnings.warn("seq_id not found in fasta file")
+            
+            self.rec=rec
             self.seq_len = len(self.rec.seq) #length of the reference sequence before bounds are applied
-        else:
-            self.seq_len = annotation.end.max()
-            
-        self.features = get_features_from_annotation(annotation,
-                                                     feature_types=self.feature_types,
-                                                     attributes=self.attributes)
+            if bounds:
+                self.rec.seq=self.rec.seq[bounds[0]:bounds[1]]    
+        else: 
+            self.seq_len = self.features.right.max()
         
-        if bounds == None: self.bounds=(0,self.seq_len)
-        else: self.bounds=bounds
-            
-        self._apply_bounds()
-        self._set_init_pos(init_pos)
-        self.init_win = min(init_win,self.bounds[1]-self.bounds[0])
-
         
-        self.max_glyph_loading_range = 20000
-        self.frame_width = 600
-
-        self.elements = self._get_browser(**kwargs)
-        if search:
-            self.elements = [self._get_search_box()]+self.elements
-            
-        self.tracks=[] 
-        
-    def _get_patch_dict(self,glyphs):
+    def _get_glyphs_dict(self,glyphs):
         if glyphs==None:
-            self.patch_dict=default_glyphs
+            self.glyphs=default_glyphs
         else:
-            self.patch_dict=glyphs
-
-    def _apply_bounds(self):
-        self.features = self.features.loc[
-            (self.features.start<self.bounds[1]) & (self.features.end>self.bounds[0])]
-        if self.genome_path!=None:
-            self.rec.seq=self.rec.seq[self.bounds[0]:self.bounds[1]]
+            self.glyphs=glyphs
+            
         
     def _set_init_pos(self, init_pos):
         if init_pos == None:
@@ -114,20 +123,6 @@ class GenomeBrowser:
             self.init_pos=sum(self.bounds)//2
         else:
             self.init_pos=init_pos
-
-    def _get_sequence_record(self, seq_id):
-        if seq_id==None: #when no seq_id is provided we take the first element
-            rec = next(SeqIO.parse(self.genome_path, 'fasta'))
-        else:
-            rec_found=False
-            for rec in SeqIO.parse(self.genome_path, 'fasta'):
-                if rec.id==seq_id:
-                    rec_found=True
-                    break
-            
-            if not rec_found:
-                warnings.warn("seq_id not found in fasta file")
-        return rec
 
     def _get_browser(self, **kwargs):
 
@@ -143,7 +138,7 @@ class GenomeBrowser:
         feature_patches = get_feature_patches(self.features, 
                                               self.x_range.start, 
                                               self.x_range.end,
-                                              patch_dict=self.patch_dict,
+                                              patch_dict=self.glyphs,
                                               attributes=self.attributes,
                                               name = self.feature_name)
         self._glyph_source = ColumnDataSource(feature_patches)
@@ -152,7 +147,7 @@ class GenomeBrowser:
         self._all_glyphs=get_feature_patches(self.features, 
                                              self.bounds[0], 
                                              self.bounds[1],
-                                             patch_dict=self.patch_dict,
+                                             patch_dict=self.glyphs,
                                              attributes=self.attributes,
                                              name = self.feature_name)
 
@@ -238,14 +233,15 @@ class GenomeBrowser:
         return text_input
     
     def show(self):
-        show(column(self.elements + [t.fig for t in self.tracks]))
+        if hasattr(self,"elements"):
+            show(column(self.elements + [t.fig for t in self.tracks]))
 
 
 
-# %% ../nbs/API/00_browser.ipynb 27
+# %% ../nbs/API/00_browser.ipynb 25
 from .track import Track
 
-# %% ../nbs/API/00_browser.ipynb 28
+# %% ../nbs/API/00_browser.ipynb 26
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200, #size of the track

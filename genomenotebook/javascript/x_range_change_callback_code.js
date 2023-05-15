@@ -18,8 +18,8 @@ if (letterSpace < 600) {
 if (x_range.start<loaded_range.data.start[0]+2000 || x_range.end>loaded_range.data.end[0]-2000){
     //find the index of elements 20kb away
     const max_glyph_loading_range=loaded_range.data['range'][0]
-    const ix_start_find = all_glyphs['xs'].findIndex((element) => element[3] > x_range.start - max_glyph_loading_range);
-    const ix_stop_find = all_glyphs['xs'].findIndex((element) => element[0] > x_range.end + max_glyph_loading_range);
+    const ix_start_find = all_glyphs['xs'].findIndex((element) => Math.max(...element) > x_range.start - max_glyph_loading_range);
+    const ix_stop_find = all_glyphs['xs'].findIndex((element) => Math.min(...element) > x_range.end + max_glyph_loading_range);
     const last_ix = all_glyphs['xs'].length - 1;
     const ix_start = ix_start_find === -1 ? 0 : ix_start_find; // takes the first element if element not found
     const ix_stop = ix_stop_find === -1 ? last_ix : ix_stop_find; // takes the last element if element not found
