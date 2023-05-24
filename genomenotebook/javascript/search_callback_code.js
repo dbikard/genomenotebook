@@ -13,7 +13,6 @@ for (let attr in all_glyphs) {
 
   if (ix !== -1) {
     pos = all_glyphs['xs'][ix][0];
-    console.log(pos)
     break;
   }
 }

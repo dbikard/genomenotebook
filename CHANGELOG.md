@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.6.1
+
+- improved way to customize features
+
+
 ## 0.6.0
 - Modified the way to import gff files to make it more efficient for large files such as the human genome
 - Improved documentation of plotting options

@@ -9,7 +9,7 @@ from fastcore.basics import *
 from genomenotebook.utils import (
     get_feature_patches, 
     create_genome_browser_plot,
-    default_glyphs,
+    get_default_glyphs,
     parse_gff,
 )
 
@@ -31,6 +31,7 @@ from bokeh.layouts import column
 
 from Bio import SeqIO
 
+import numpy as np
 import warnings
 
 # %% ../nbs/API/00_browser.ipynb 5
@@ -57,7 +58,7 @@ class GenomeBrowser:
         self.attributes = attributes
         self.feature_types = feature_types
         self.feature_name = feature_name
-        self._get_glyphs_dict(glyphs)
+        self.glyphs = get_default_glyphs() if glyphs==None else glyphs
 
         self.features = parse_gff(gff_path,
                                       seq_id=seq_id,
@@ -65,31 +66,50 @@ class GenomeBrowser:
                                       feature_types=feature_types
                                      )
         
-        if len(self.features)>0:
-            if feature_name not in self.features.columns:
-                self.features[feature_name]=""
-                
-            self.seq_id = self.features.seq_id[0]
-
-            self._get_sequence(bounds)
-
-            if bounds == None: self.bounds=(0,self.seq_len)
-            else: self.bounds=bounds
-
-            self._set_init_pos(init_pos)
-            self.init_win = min(init_win,self.bounds[1]-self.bounds[0])
-
-
-            self.max_glyph_loading_range = 20000
-            self.frame_width = 600
-
-            self.elements = self._get_browser(**kwargs)
-            if search:
-                self.elements = [self._get_search_box()]+self.elements
-
-            self.tracks=[] 
+        self.kwargs=kwargs
+        self.bounds=bounds
+        self.search=search
+        self.init_pos=init_pos
+        self.init_win=init_win
         
-    def _get_sequence(self, bounds):
+        if len(self.features)>0:
+            self._prepare_data()
+            
+    def _prepare_data(self):
+        if self.feature_name not in self.features.columns:
+            self.features[self.feature_name]=""
+
+        self.seq_id = self.features.seq_id[0]
+        self._get_sequence()
+
+        if self.bounds == None: self.bounds=(0,self.seq_len)
+
+        self.patches = get_feature_patches(self.features, 
+                                         self.bounds[0], 
+                                         self.bounds[1],
+                                         patch_dict=self.glyphs,
+                                         attributes=self.attributes,
+                                         name = self.feature_name)
+
+        self._set_init_pos()
+        self.init_win = min(self.init_win,self.bounds[1]-self.bounds[0])
+
+        
+        self.tracks=[]
+        semi_win = self.init_win / 2
+            
+        self.x_range = Range1d(
+            max(self.bounds[0],self.init_pos - semi_win), min(self.bounds[1],self.init_pos + semi_win), 
+            bounds=self.bounds, 
+            max_interval=100000,
+            min_interval=40
+        )
+
+        self.max_glyph_loading_range = 20000
+        self.frame_width = 600
+        self.highlight_regions = {"x":[],"width":[]}
+
+    def _get_sequence(self):
         if self.genome_path!=None: 
             rec_found=False
             for rec in SeqIO.parse(self.genome_path, 'fasta'):
@@ -102,67 +122,48 @@ class GenomeBrowser:
             
             self.rec=rec
             self.seq_len = len(self.rec.seq) #length of the reference sequence before bounds are applied
-            if bounds:
-                self.rec.seq=self.rec.seq[bounds[0]:bounds[1]]    
+            if self.bounds:
+                self.rec.seq=self.rec.seq[self.bounds[0]:self.bounds[1]]    
         else: 
             self.seq_len = self.features.right.max()
         
-        
-    def _get_glyphs_dict(self,glyphs):
-        if glyphs==None:
-            self.glyphs=default_glyphs
-        else:
-            self.glyphs=glyphs
-            
-        
-    def _set_init_pos(self, init_pos):
-        if init_pos == None:
+    def _set_init_pos(self):
+        if self.init_pos == None:
             self.init_pos=sum(self.bounds)//2
-        elif init_pos>self.bounds[1] or init_pos<self.bounds[0]:
+        elif self.init_pos>self.bounds[1] or self.init_pos<self.bounds[0]:
             warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos=sum(self.bounds)//2
-        else:
-            self.init_pos=init_pos
 
     def _get_browser(self, **kwargs):
-
-        semi_win = self.init_win / 2
-        self.x_range = Range1d(
-            max(self.bounds[0],self.init_pos - semi_win), min(self.bounds[1],self.init_pos + semi_win), 
-            bounds=self.bounds, 
-            max_interval=100000,
-            min_interval=40
-        )
         
-        #Initial glyphs to be plotted by bokeh
-        feature_patches = get_feature_patches(self.features, 
-                                              self.x_range.start, 
-                                              self.x_range.end,
-                                              patch_dict=self.glyphs,
-                                              attributes=self.attributes,
-                                              name = self.feature_name)
-        self._glyph_source = ColumnDataSource(feature_patches)
+        #Filter initial glyphs by position
+        feature_patches = self.patches.loc[(
+            self.patches['xs'].apply(
+                lambda x: max(x)>self.x_range.start-self.max_glyph_loading_range)) & (
+            self.patches['xs'].apply(
+                lambda x: min(x)<self.x_range.end+self.max_glyph_loading_range)
+            )]
         
-        #Glyphs for the whole genome
-        self._all_glyphs=get_feature_patches(self.features, 
-                                             self.bounds[0], 
-                                             self.bounds[1],
-                                             patch_dict=self.glyphs,
-                                             attributes=self.attributes,
-                                             name = self.feature_name)
-
+        self._glyph_source = ColumnDataSource(feature_patches.to_dict(orient="list"))
+        
         #Information about the range currently plotted
-        self._loaded_range = ColumnDataSource({"start":[self.x_range.start],
-                                                "end":[self.x_range.end], 
+        self._loaded_range = ColumnDataSource({"start":[self.x_range.start-self.max_glyph_loading_range],
+                                                "end":[self.x_range.end+self.max_glyph_loading_range], 
                                                 "range":[self.max_glyph_loading_range]})
-
         
 
-        p = create_genome_browser_plot(self._glyph_source, 
+
+        self.gene_track = create_genome_browser_plot(self._glyph_source, 
                                        self.x_range, 
                                        attributes=self.attributes,
                                        **kwargs)
-        p.frame_width=self.frame_width
+        
+        # Adding the possibility to highlight regions
+        highlight_source = ColumnDataSource(self.highlight_regions)
+        h=Rect(x='x',y=0,width='width',height=self.gene_track.height,fill_color="colors",fill_alpha="alpha",line_alpha=0)
+        self.gene_track.add_glyph(highlight_source, h)
+        
+        self.gene_track.frame_width=self.frame_width
 
         sty=Styles(font_size='14px',
                 font_family="Courrier",
@@ -186,9 +187,9 @@ class GenomeBrowser:
         
         xcb = CustomJS(
             args={
-                "x_range": p.x_range,
+                "x_range": self.gene_track.x_range,
                 "sequence": sequence,
-                "all_glyphs":self._all_glyphs,
+                "all_glyphs":self.patches.to_dict(orient="list"),
                 "glyph_source": self._glyph_source,
                 "div": self._div,
                 "loaded_range":self._loaded_range,
@@ -196,21 +197,20 @@ class GenomeBrowser:
             code=x_range_change_callback_code
         )
 
-        p.x_range.js_on_change('start', xcb)
-        self.gene_track=p
-        self.x_range=p.x_range
+        self.gene_track.x_range.js_on_change('start', xcb)
+        self.x_range=self.gene_track.x_range
 
         if self.show_seq:
-            return [p,self._div]
+            return [self.gene_track,self._div]
         else:
-            return [p]
+            return [self.gene_track]
         
     def _get_search_box(self):
         ## Create a text input widget for search
         completions=set()
-        for attr in self._all_glyphs:
+        for attr in self.patches.columns:
             if not attr in ["xs","ys","color","pos"]:
-                completions.update(set(self._all_glyphs[attr]))
+                completions.update(set(self.patches[attr]))
         
         text_input = AutocompleteInput(completions=list(completions), value="")
 
@@ -224,7 +224,7 @@ class GenomeBrowser:
                 "x_range": self.x_range,
                 "glyph_source": self._glyph_source,
                 "bounds": self.bounds,
-                "all_glyphs": self._all_glyphs,
+                "all_glyphs": self.patches.to_dict(orient="list"),
                 "loaded_range": self._loaded_range,
                 "text_input": text_input,
                 "search_span_source": search_span_source,
@@ -238,15 +238,32 @@ class GenomeBrowser:
         return text_input
     
     def show(self):
-        if hasattr(self,"elements"):
+        if len(self.features)>0:
+            self.elements = self._get_browser(**self.kwargs)
+            if self.search:
+                self.elements = [self._get_search_box()]+self.elements
             show(column(self.elements + [t.fig for t in self.tracks]))
 
 
 
-# %% ../nbs/API/00_browser.ipynb 27
-from .track import Track
+# %% ../nbs/API/00_browser.ipynb 26
+@patch
+def highlight(self:GenomeBrowser,
+              regions:list, #list of tuples with the format (start position, stop position)
+              colors=None, #list of colors
+              alpha=0.2, #transparency
+             ):
+    starts, stops = map(np.array,zip(*regions))
+    width=stops-starts
+    if not colors:
+        colors=['green']*len(regions)
+    alpha=[alpha]*len(regions)
+    self.highlight_regions={"x":starts,"width":width,"colors":colors, "alpha":alpha}
 
 # %% ../nbs/API/00_browser.ipynb 28
+from .track import Track
+
+# %% ../nbs/API/00_browser.ipynb 29
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200, #size of the track
@@ -258,7 +275,9 @@ def add_track(self:GenomeBrowser,
     t.fig.x_range = self.x_range
     t.fig.frame_width = self.frame_width
     t.bounds = self.bounds
-    t.loaded_range = ColumnDataSource(self._loaded_range.data)
+    t.loaded_range = ColumnDataSource({"start":[self.x_range.start-self.max_glyph_loading_range],
+                                        "end":[self.x_range.end+self.max_glyph_loading_range], 
+                                        "range":[self.max_glyph_loading_range]})
     t.max_glyph_loading_range = self.max_glyph_loading_range
     self.tracks.append(t)
     return t
