@@ -107,7 +107,7 @@ class GenomeBrowser:
 
         self.max_glyph_loading_range = 20000
         self.frame_width = 600
-        self.highlight_regions = {"x":[],"width":[]}
+        self.highlight_regions = {"x":[],"width":[],"colors":[],"alpha":[]}
 
     def _get_sequence(self):
         if self.genome_path!=None: 
@@ -210,7 +210,7 @@ class GenomeBrowser:
         completions=set()
         for attr in self.patches.columns:
             if not attr in ["xs","ys","color","pos"]:
-                completions.update(set(self.patches[attr]))
+                completions.update(map(str,set(self.patches[attr])))
         
         text_input = AutocompleteInput(completions=list(completions), value="")
 

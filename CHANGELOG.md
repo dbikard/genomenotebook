@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.6.2
+
+- Improved docs.
+- Fixed warning due to missing columns for highlights
+
+
 ## 0.6.1
 
 - improved way to customize features
