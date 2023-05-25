@@ -219,7 +219,7 @@ def get_y_range() -> tuple:
 
 gene_y_range = (0.05, 0.2)
 def get_gene_y_range() -> tuple:
-    """Accessor that returns the Y range for the genome browser plot
+    """Accessor that returns the Y range for the features
     """
     return gene_y_range
 
@@ -254,9 +254,6 @@ def box_coordinates(feature):
 def get_patch_coordinates(feature, # row of a pandas DataFrame extracted from a GFF file
                           patch_dict: dict = default_glyphs # a dictionnary containing as key a feature type and as value a patch definition.
                          ):
-    """
-    patchs are defined with a patch a tuple: (patch_type, (patch_color_plus, patch_color_minus)). 
-    Different colors can be specified depending on the strand."""
     
     patch_colors=patch_dict[feature.type]["colors"]
     if len(patch_colors)>1:
@@ -343,20 +340,25 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
  
 
 # %% ../nbs/API/02_utils.ipynb 38
-def create_genome_browser_plot(glyphSource, x_range, attributes=default_attributes, **kwargs):
-    plot_height = kwargs.get("plot_height", 150)
-    label_angle = kwargs.get("label_angle", 45)
-    text_font_size = kwargs.get("text_font_size", "10pt")
-    output_backend = kwargs.get("output_backend", "webgl")
+def create_genome_browser_plot(glyphSource, 
+                               x_range, 
+                               attributes=default_attributes, 
+                               height = 150, 
+                               label_angle = 45,
+                               label_font_size = "10pt",
+                               output_backend = "webgl",
+                               **kwargs):
     
+
     y_min, y_max = get_y_range()
     p_annot = figure(
         tools = "xwheel_zoom,xpan,save",
         active_scroll = "xwheel_zoom",
-        height = plot_height,
+        height = height,
         x_range = x_range,
         y_range = Range1d(y_min, y_max),
         output_backend=output_backend,
+        **kwargs
     )
     # Add tool
     p_annot.add_tools(BoxZoomTool(dimensions="width"))
@@ -380,7 +382,7 @@ def create_genome_browser_plot(glyphSource, x_range, attributes=default_attribut
         text="names",
         level="glyph",
         angle=label_angle,
-        text_font_size=text_font_size,
+        text_font_size=label_font_size,
         x_offset=-5,
         y_offset=0,
         source=glyphSource,

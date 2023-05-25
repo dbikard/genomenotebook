@@ -50,7 +50,12 @@ class GenomeBrowser:
                  feature_name: str = "gene", #attribute to be displayed as the feature name
                  feature_types: list = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"], # list of feature types to display
                  glyphs: dict = None, #dictionnary defining the type and color of glyphs to display for each feature type
-                 **kwargs):
+                 height: int = 150, # height of the annotation track
+                 label_angle: int = 45, # angle of the feature names displayed on top of the features
+                 label_font_size: str = "10pt", # font size fo the feature names
+                 output_backend: str ="webgl", #can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently used to modify the plot using other softwares.
+                 **kwargs, #additional keyword arguments are passed as is to bokeh.plotting.figure
+                 ):
         
         self.gff_path = gff_path
         self.genome_path = genome_path
@@ -60,6 +65,7 @@ class GenomeBrowser:
         self.feature_name = feature_name
         self.glyphs = get_default_glyphs() if glyphs==None else glyphs
 
+
         self.features = parse_gff(gff_path,
                                       seq_id=seq_id,
                                       bounds=bounds,
@@ -67,6 +73,11 @@ class GenomeBrowser:
                                      )
         
         self.kwargs=kwargs
+        self.style_kwargs={}
+        for k in ["height","label_angle","label_font_size","output_backend"]:
+            self.style_kwargs[k]=locals()[k]
+        
+        
         self.bounds=bounds
         self.search=search
         self.init_pos=init_pos
@@ -133,6 +144,14 @@ class GenomeBrowser:
         elif self.init_pos>self.bounds[1] or self.init_pos<self.bounds[0]:
             warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos=sum(self.bounds)//2
+
+
+    def show(self):
+        if len(self.features)>0:
+            self.elements = self._get_browser(**self.style_kwargs,**self.kwargs)
+            if self.search:
+                self.elements = [self._get_search_box()]+self.elements
+            show(column(self.elements + [t.fig for t in self.tracks]))
 
     def _get_browser(self, **kwargs):
         
@@ -237,16 +256,11 @@ class GenomeBrowser:
 
         return text_input
     
-    def show(self):
-        if len(self.features)>0:
-            self.elements = self._get_browser(**self.kwargs)
-            if self.search:
-                self.elements = [self._get_search_box()]+self.elements
-            show(column(self.elements + [t.fig for t in self.tracks]))
 
 
 
-# %% ../nbs/API/00_browser.ipynb 26
+
+# %% ../nbs/API/00_browser.ipynb 23
 @patch
 def highlight(self:GenomeBrowser,
               regions:list, #list of tuples with the format (start position, stop position)
@@ -260,10 +274,10 @@ def highlight(self:GenomeBrowser,
     alpha=[alpha]*len(regions)
     self.highlight_regions={"x":starts,"width":width,"colors":colors, "alpha":alpha}
 
-# %% ../nbs/API/00_browser.ipynb 28
+# %% ../nbs/API/00_browser.ipynb 25
 from .track import Track
 
-# %% ../nbs/API/00_browser.ipynb 29
+# %% ../nbs/API/00_browser.ipynb 26
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200, #size of the track
