@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.6.3
+
+- More options to customize the GenomeBrowser annotation track
+
+
 ## 0.6.2
 
 - Improved docs.
