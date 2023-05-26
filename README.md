@@ -7,13 +7,13 @@
 
     Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_load.v0+json
 
-> Version (0.6.3)
+> Version (0.6.6)
 
 ## Install
 
 `pip install genomenotebook`
 
-### Upgrade
+#### Upgrade
 
 New versions of genomenotebook are released on a regular basis. Make
 sure to upgrade your installation to enjoy all the features.
@@ -30,6 +30,9 @@ Tracks can be added to visualize your favorite genomics data. See
 
 ``` python
 import genomenotebook as gn
+```
+
+``` python
 g=gn.GenomeBrowser(gff_path=gff_path, genome_path=genome_path, init_pos=10000)
 g.show()
 ```
