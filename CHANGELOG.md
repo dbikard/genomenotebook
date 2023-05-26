@@ -4,6 +4,12 @@
 
 ## 0.6.3
 
+- Fixed sequence display
+- Enabled saving plots to png or svg
+
+
+## 0.6.3
+
 - More options to customize the GenomeBrowser annotation track
 
 

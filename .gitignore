@@ -7,6 +7,8 @@ _proc/
 .gitconfig
 *.bak
 *.log
+*.svg
+*.png
 *~
 ~*
 _tmp*
@@ -18,6 +20,8 @@ token
 # Data downloaded for testing
 nbs/API/*.gz
 nbs/*.gz
+nbs/*.svg
+nbs/*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

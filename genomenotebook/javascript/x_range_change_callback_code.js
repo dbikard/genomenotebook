@@ -1,18 +1,29 @@
 let x_size = x_range.end - x_range.start;
 
 // show the sequence when zoomed in enough
-let letterSpace = 9.6*x_size
-if (letterSpace < 600) {
-    let seq = sequence.seq.substring(x_range.start-sequence.bounds[0], x_range.end-sequence.bounds[0]);
-    let letter_spacing = (600-letterSpace)/x_size;
-    div.styles.letter_spacing = letter_spacing + "px";
-    //div.style.fontStretch = (Math.min(600/letterSpace,1)*100).floor() + '%';
+let letterSpace = 9.6*x_size;
+if (letterSpace < div.width) {
+    //console.log(x_range.start);
+    let seq = sequence.seq.substring(Math.floor(x_range.start)-sequence.bounds[0], Math.floor(x_range.end)-sequence.bounds[0]);
+    //let letter_spacing = (div.width-letterSpace)/x_size;
+    //div.styles.letter_spacing = letter_spacing + "px";
     
-    div.text = seq;
+    var whitespace='&nbsp;'.repeat(parseInt(div.width/4)); //adds a line of whitespace to force the justification before the line return
+    div.text = seq + ' <span style="white-space: nowrap">'+whitespace+'</span>'; // this enforces the inter-character text-justify on a single line
 
+    var start_floatingPart = x_range.start % 1;
+    var end_floatingPart = x_range.end % 1;
+    var spaceBetweenBases=div.width/x_size;
+    var pad_left=parseInt(spaceBetweenBases*(1-start_floatingPart));
+    var pad_right=parseInt(spaceBetweenBases*end_floatingPart);
+    div.styles.padding_left = pad_left+"px";
+    div.styles.padding_right = pad_right+"px";
+    div.change.emit()
 } else {
     div.text="";
+    div.change.emit()
 }
+
 
 //If getting close to the edge of loaded glyphs, then reload them on current position
 if (x_range.start<loaded_range.data.start[0]+2000 || x_range.end>loaded_range.data.end[0]-2000){

@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['GenomeBrowser']
 
-# %% ../nbs/API/00_browser.ipynb 4
+# %% ../nbs/API/00_browser.ipynb 5
 from fastcore.basics import *
 
 from genomenotebook.utils import (
@@ -11,6 +11,8 @@ from genomenotebook.utils import (
     create_genome_browser_plot,
     get_default_glyphs,
     parse_gff,
+    in_wsl,
+    add_extension,
 )
 
 from genomenotebook.javascript import (
@@ -34,11 +36,11 @@ from Bio import SeqIO
 import numpy as np
 import warnings
 
-# %% ../nbs/API/00_browser.ipynb 5
+# %% ../nbs/API/00_browser.ipynb 6
 class GenomeBrowser:
     """Initialize a GenomeBrowser object."""
     def __init__(self,
-                 gff_path: str, #path to the gff3 file of the annotations
+                 gff_path: str, #path to the gff3 file of the annotations (also accepts gzip files)
                  genome_path: str = None, #path to the fasta file of the genome sequence
                  seq_id: str = None, #id of the sequence to show for genomes with multiple contigs
                  init_pos: int = None, #initial position to display
@@ -51,9 +53,10 @@ class GenomeBrowser:
                  feature_types: list = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"], # list of feature types to display
                  glyphs: dict = None, #dictionnary defining the type and color of glyphs to display for each feature type
                  height: int = 150, # height of the annotation track
+                 width: int = 600, # width of the inner frame of the browser
                  label_angle: int = 45, # angle of the feature names displayed on top of the features
                  label_font_size: str = "10pt", # font size fo the feature names
-                 output_backend: str ="webgl", #can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently used to modify the plot using other softwares.
+                 output_backend: str ="webgl", #can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
                  **kwargs, #additional keyword arguments are passed as is to bokeh.plotting.figure
                  ):
         
@@ -72,9 +75,11 @@ class GenomeBrowser:
                                       feature_types=feature_types
                                      )
         
+        self.output_backend=output_backend
         self.kwargs=kwargs
         self.style_kwargs={}
-        for k in ["height","label_angle","label_font_size","output_backend"]:
+        self.height=height
+        for k in ["height","label_angle","label_font_size"]:
             self.style_kwargs[k]=locals()[k]
         
         
@@ -82,6 +87,7 @@ class GenomeBrowser:
         self.search=search
         self.init_pos=init_pos
         self.init_win=init_win
+        self.frame_width = width
         
         if len(self.features)>0:
             self._prepare_data()
@@ -113,11 +119,10 @@ class GenomeBrowser:
             max(self.bounds[0],self.init_pos - semi_win), min(self.bounds[1],self.init_pos + semi_win), 
             bounds=self.bounds, 
             max_interval=100000,
-            min_interval=40
+            min_interval=30
         )
 
         self.max_glyph_loading_range = 20000
-        self.frame_width = 600
         self.highlight_regions = {"x":[],"width":[],"colors":[],"alpha":[]}
 
     def _get_sequence(self):
@@ -148,7 +153,7 @@ class GenomeBrowser:
 
     def show(self):
         if len(self.features)>0:
-            self.elements = self._get_browser(**self.style_kwargs,**self.kwargs)
+            self.elements = self._get_browser(output_backend=self.output_backend,**self.style_kwargs,**self.kwargs)
             if self.search:
                 self.elements = [self._get_search_box()]+self.elements
             show(column(self.elements + [t.fig for t in self.tracks]))
@@ -184,6 +189,14 @@ class GenomeBrowser:
         
         self.gene_track.frame_width=self.frame_width
 
+        
+        
+        ## Adding the ability to display the sequence when zooming in
+        sequence = {
+            'seq': str(self.rec.seq).upper() if self.show_seq else "",
+            'bounds':self.bounds
+        }
+        ## Setting the div that will display the sequence
         sty=Styles(font_size='14px',
                 font_family="Courrier",
                 color="black",
@@ -191,18 +204,17 @@ class GenomeBrowser:
                 background_color = "white",
                 margin="0",
                 margin_left= "2px",
+                text_align= 'justify',
+                text_justify= "inter-character",
+                #width= str(self.frame_width)+"px",
                 )
         
-        ## Adding the ability to display the sequence when zooming in
-        sequence = {
-            'seq': str(self.rec.seq).upper() if self.show_seq else "",
-            'bounds':self.bounds
-        }
-
         self._div = Div(height=18, height_policy="fixed", 
-                    width=600, width_policy="fixed",
-                    styles = sty
-                    )
+                        width=self.frame_width, 
+                        max_width=self.frame_width,
+                        width_policy="fixed",
+                        styles = sty
+                        )
         
         xcb = CustomJS(
             args={
@@ -281,11 +293,10 @@ from .track import Track
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200, #size of the track
-             output_backend="webgl", #can be set to webgl (more efficient) or svg (for figure export)
              ) -> Track:
     """Adds a track to the GenomeBrowser. Ensures that the x_range are shared and figure widths are identical."""
     t = Track(height=height, 
-              output_backend=output_backend)
+              output_backend=self.output_backend)
     t.fig.x_range = self.x_range
     t.fig.frame_width = self.frame_width
     t.bounds = self.bounds
@@ -296,3 +307,66 @@ def add_track(self:GenomeBrowser,
     self.tracks.append(t)
     return t
     
+
+# %% ../nbs/API/00_browser.ipynb 29
+from bokeh.io import export_svgs, export_svg, export_png
+from selenium.webdriver.chrome.service import Service
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import os
+from svgutils import compose
+
+# %% ../nbs/API/00_browser.ipynb 30
+@patch
+def save(self:GenomeBrowser, 
+         fname
+        ):
+        """This function saves the initial plot that is generated and not the current view of the browser"""
+        if len(self.features)>0:
+            self.elements = self._get_browser(output_backend=self.output_backend,**self.style_kwargs,**self.kwargs)
+            layout=column(self.elements + [t.fig for t in self.tracks])
+
+        if in_wsl():
+                ## Setup chrome options
+                chrome_options = Options()
+                chrome_options.add_argument("--headless") # Ensure GUI is off
+                chrome_options.add_argument("--no-sandbox")
+                chrome_options.add_argument("--disable-3d-apis")
+                chrome_options.add_argument("--disable-blink-features")
+                
+
+                homedir = os.path.expanduser("~")
+                try:
+                        webdriver_service = Service(f"{homedir}/chromedriver/stable/chromedriver")
+                        browser = webdriver.Chrome(service=webdriver_service, options=chrome_options)
+                except:
+                        warnings.warn("If using WSL you can install chromedriver following these instructions: https://cloudbytes.dev/snippets/run-selenium-and-chrome-on-wsl2 \n\
+                                Keep the path to chromdriver as in these instructions: ~/chromedriver/stable/chromedriver")
+                        browser=None
+
+                
+        else:
+                browser=None
+
+        base_name, ext = os.path.splitext(fname)
+        if self.output_backend=="svg":
+                fname=add_extension(fname,extension="svg")
+                export_svgs(layout, filename=fname, webdriver=browser)
+                if len(self.tracks)>0:
+                    total_height=sum([self.height]+[t.height for t in self.tracks])
+                    svgelements=[compose.SVG(fname)]
+                    offset=self.height
+                    for i,t in enumerate(self.tracks):
+                        svgelements.append(
+                            compose.SVG(f"{base_name}_{i+1}.svg").move(0,offset)
+                        )
+                        offset+=t.height
+                        
+                    compose.Figure(self.frame_width, total_height, *svgelements).save(f"{fname}_composite.svg")
+
+        elif self.output_backend=="webgl":
+                if ext.lower()==".svg":
+                        warnings.warn('In order to save to svg you need to set the option output_backend="svg" when calling GenomeBrowser')
+
+                fname=add_extension(fname,extension="png")
+                export_png(layout, filename=fname, webdriver=browser)
