@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.6.5
+
+- fixed issue with file names when saving
+- added selenium and svgutils as dependencies
+
+
 ## 0.6.4
 
 - fixed website and readme
