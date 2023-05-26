@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.6.4
+
+- fixed website and readme
+
+
 ## 0.6.3
 
 - Fixed sequence display
