@@ -56,6 +56,7 @@ class GenomeBrowser:
                  width: int = 600, # width of the inner frame of the browser
                  label_angle: int = 45, # angle of the feature names displayed on top of the features
                  label_font_size: str = "10pt", # font size fo the feature names
+                 feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
                  output_backend: str ="webgl", #can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
                  **kwargs, #additional keyword arguments are passed as is to bokeh.plotting.figure
                  ):
@@ -66,8 +67,8 @@ class GenomeBrowser:
         self.attributes = attributes
         self.feature_types = feature_types
         self.feature_name = feature_name
+        self.feature_height = feature_height
         self.glyphs = get_default_glyphs() if glyphs==None else glyphs
-
 
         self.features = parse_gff(gff_path,
                                       seq_id=seq_id,
@@ -79,7 +80,7 @@ class GenomeBrowser:
         self.kwargs=kwargs
         self.style_kwargs={}
         self.height=height
-        for k in ["height","label_angle","label_font_size"]:
+        for k in ["height","label_angle","label_font_size", "feature_height"]:
             self.style_kwargs[k]=locals()[k]
         
         
@@ -106,7 +107,9 @@ class GenomeBrowser:
                                          self.bounds[1],
                                          patch_dict=self.glyphs,
                                          attributes=self.attributes,
-                                         name = self.feature_name)
+                                         name = self.feature_name,
+                                         feature_height = self.feature_height,
+                                         )
 
         self._set_init_pos()
         self.init_win = min(self.init_win,self.bounds[1]-self.bounds[0])

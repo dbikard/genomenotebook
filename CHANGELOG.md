@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.6.6
+
+- adding control of feature height
+
+
 ## 0.6.5
 
 - fixed issue with file names when saving

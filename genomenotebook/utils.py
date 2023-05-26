@@ -225,7 +225,7 @@ def get_gene_y_range() -> tuple:
     return gene_y_range
 
 # %% ../nbs/API/02_utils.ipynb 28
-def arrow_coordinates(feature):
+def arrow_coordinates(feature,feature_height):
     feature_size = feature.right - feature.left
     
     if feature.strand=="+":
@@ -240,20 +240,23 @@ def arrow_coordinates(feature):
         arrow_base
        )
     
-    y_min, y_max = gene_y_range
+    y_min = 0.05
+    y_max = y_min+feature_height
     ys = (y_min, y_max, y_max, (y_max + y_min) / 2, y_min)
     return xs, ys
 
-def box_coordinates(feature):
+def box_coordinates(feature,feature_height):
     xs=(feature.left, feature.left,
         feature.right, feature.right)
-    y_min, y_max = gene_y_range
+    y_min = 0.05
+    y_max = y_min+feature_height
     ys = (y_min+0.1, y_max-0.1, y_max-0.1, y_min+0.1)
     return xs, ys
 
 
 def get_patch_coordinates(feature, # row of a pandas DataFrame extracted from a GFF file
-                          patch_dict: dict = default_glyphs # a dictionnary containing as key a feature type and as value a patch definition.
+                          patch_dict: dict = default_glyphs, # a dictionnary containing as key a feature type and as value a patch definition.
+                          feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
                          ):
     
     patch_colors=patch_dict[feature.type]["colors"]
@@ -264,9 +267,9 @@ def get_patch_coordinates(feature, # row of a pandas DataFrame extracted from a 
         color_dic=defaultdict(lambda: patch_colors[0])
         
     if patch_dict[feature.type]["gylph_type"]=="arrow":
-        return arrow_coordinates(feature), color_dic[feature.strand]
+        return arrow_coordinates(feature, feature_height), color_dic[feature.strand]
     elif patch_dict[feature.type]["gylph_type"]=="box":
-        return box_coordinates(feature), color_dic[feature.strand]
+        return box_coordinates(feature, feature_height), color_dic[feature.strand]
     
     
 
@@ -309,12 +312,13 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
                         right: int, #right limit
                         patch_dict: dict = default_glyphs, #glyphs to use for each feature type
                         attributes: list = default_attributes, #list of attributes to display when hovering
-                        name: str = default_attributes[0] #attribute to be displayed as the feature name
+                        name: str = default_attributes[0], #attribute to be displayed as the feature name
+                        feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
                        )->pd.DataFrame:
     features=features.loc[(features["right"] > left) & (features["left"] < right)]
     
     if len(features)>0:
-        coordinates, colors = zip(*features.apply(get_patch_coordinates,patch_dict=patch_dict,axis=1))
+        coordinates, colors = zip(*features.apply(get_patch_coordinates,patch_dict=patch_dict,feature_height=feature_height,axis=1))
         xs, ys = zip(*coordinates)
     else:
         colors = []
@@ -348,6 +352,7 @@ def create_genome_browser_plot(glyphSource,
                                label_angle = 45,
                                label_font_size = "10pt",
                                output_backend = "webgl",
+                               feature_height = 0.15,
                                **kwargs):
     
 
@@ -379,7 +384,7 @@ def create_genome_browser_plot(glyphSource,
     p_annot.scatter(x="pos", y=0, size=0, source=glyphSource)
     labels = LabelSet(
         x="pos",
-        y=gene_y_range[1]+0.02,
+        y=feature_height+0.07,
         text="names",
         level="glyph",
         angle=label_angle,
