@@ -362,7 +362,7 @@ def save(self:GenomeBrowser,
                         )
                         offset+=t.height
                         
-                    compose.Figure(self.frame_width, total_height, *svgelements).save(f"{fname}_composite.svg")
+                    compose.Figure(self.frame_width, total_height, *svgelements).save(f"{base_name}_composite.svg")
 
         elif self.output_backend=="webgl":
                 if ext.lower()==".svg":
