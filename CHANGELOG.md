@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.7.1
+
+- fixed minor bugs
+
+
 ## 0.7.0
 
 - refactored the way to define glyphs and created the Glyph class

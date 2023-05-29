@@ -41,7 +41,8 @@ import warnings
 
 # %% ../nbs/API/00_browser.ipynb 6
 class GenomeBrowser:
-    """Initialize a GenomeBrowser object."""
+    """Initialize a GenomeBrowser object.
+    """
     def __init__(self,
                  gff_path: str, #path to the gff3 file of the annotations (also accepts gzip files)
                  genome_path: str = None, #path to the fasta file of the genome sequence
@@ -278,7 +279,7 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/API/00_browser.ipynb 23
+# %% ../nbs/API/00_browser.ipynb 24
 @patch
 def highlight(self:GenomeBrowser,
               regions:list, #list of tuples with the format (start position, stop position)
@@ -292,10 +293,10 @@ def highlight(self:GenomeBrowser,
     alpha=[alpha]*len(regions)
     self.highlight_regions={"x":starts,"width":width,"colors":colors, "alpha":alpha}
 
-# %% ../nbs/API/00_browser.ipynb 25
+# %% ../nbs/API/00_browser.ipynb 26
 from .track import Track
 
-# %% ../nbs/API/00_browser.ipynb 26
+# %% ../nbs/API/00_browser.ipynb 27
 @patch
 def add_track(self:GenomeBrowser,
              height:int = 200, #size of the track
@@ -314,7 +315,7 @@ def add_track(self:GenomeBrowser,
     return t
     
 
-# %% ../nbs/API/00_browser.ipynb 29
+# %% ../nbs/API/00_browser.ipynb 30
 from bokeh.io import export_svgs, export_svg, export_png
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
@@ -322,7 +323,7 @@ from selenium.webdriver.chrome.options import Options
 import os
 from svgutils import compose
 
-# %% ../nbs/API/00_browser.ipynb 30
+# %% ../nbs/API/00_browser.ipynb 31
 @patch
 def save(self:GenomeBrowser, 
          fname
