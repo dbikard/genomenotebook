@@ -5,20 +5,22 @@
 ``` python
 ```
 
-    Unable to display output for mime type(s): application/javascript, application/vnd.bokehjs_load.v0+json
-
 > Version (0.6.6)
 
 ## Install
 
-`pip install genomenotebook`
+``` bash
+pip install genomenotebook
+```
 
 #### Upgrade
 
 New versions of genomenotebook are released on a regular basis. Make
 sure to upgrade your installation to enjoy all the features.
 
-    pip install genomenotebook --upgrade
+``` bash
+pip install genomenotebook --upgrade
+```
 
 ## How to use
 

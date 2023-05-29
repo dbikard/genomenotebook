@@ -7,12 +7,15 @@ __all__ = ['GenomeBrowser']
 from fastcore.basics import *
 
 from genomenotebook.utils import (
-    get_feature_patches, 
-    create_genome_browser_plot,
-    get_default_glyphs,
     parse_gff,
     in_wsl,
     add_extension,
+)
+
+from genomenotebook.glyphs import (
+    get_feature_patches, 
+    create_genome_browser_plot,
+    get_default_glyphs,
 )
 
 from genomenotebook.javascript import (
@@ -105,7 +108,7 @@ class GenomeBrowser:
         self.patches = get_feature_patches(self.features, 
                                          self.bounds[0], 
                                          self.bounds[1],
-                                         patch_dict=self.glyphs,
+                                         glyphs_dict=self.glyphs,
                                          attributes=self.attributes,
                                          name = self.feature_name,
                                          feature_height = self.feature_height,

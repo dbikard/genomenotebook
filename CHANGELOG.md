@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.7.0
+
+- refactored the way to define glyphs and created the Glyph class
+- improved the documentation
+
+
 ## 0.6.6
 
 - adding control of feature height

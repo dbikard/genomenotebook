@@ -11,7 +11,8 @@ from bokeh.plotting import figure
 from bokeh.models import (
     CustomJS,
     ColumnDataSource,
-    NumeralTickFormatter
+    NumeralTickFormatter,
+    Range1d,
 )
 
 from .javascript import track_callback_code
@@ -36,7 +37,7 @@ class Track:
                  output_backend="webgl" 
                 ):        
         self.height = height
-        self.fig = figure(tools="xwheel_zoom,xpan,save,reset",
+        self.fig = figure(tools="xwheel_zoom,ywheel_zoom,pan,box_zoom,save,reset",
                           active_scroll="xwheel_zoom",
                           height=height,
                           y_axis_location="right", #this is required in order to keep a proper alignment with the sequence
@@ -55,16 +56,22 @@ def _set_track_data_source(self:Track, data, pos, columns):
     columns=[c for c in columns if c] #some arguments can be None => remove them
     data=data.loc[(self.bounds[0] < data[pos]) & (data[pos] < self.bounds[1]),
                   [pos]+columns].copy()
-    data=data.sort_values("pos")
+    data=data.sort_values(pos)
     if len(data)>10**5:
         warnings.warn("You are trying to plot more than 10^5 glyphs, this might crash your memory. \
         Consider using bounds or reducing the number of datapoints.")
+
+    y=columns[0]
+    ymin = data[y].values.min()
+    ymax = data[y].values.max()
+    self.fig.y_range=Range1d(ymin,ymax,
+                             bounds=(ymin,ymax))
         
     self.all_data=ColumnDataSource(data)
     self.loaded_data=ColumnDataSource(
-        data.loc[(self.fig.x_range.start - self.loaded_range.data["start"][0] < data[pos]
+        data.loc[(self.loaded_range.data["start"][0] < data[pos]
                  ) & (
-                 data[pos] < self.fig.x_range.end + self.loaded_range.data["end"][0])]
+                 data[pos] < self.loaded_range.data["end"][0])]
     )
     
     xcb = CustomJS(

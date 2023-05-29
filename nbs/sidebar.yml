@@ -4,8 +4,10 @@ website:
       - index.ipynb
       - 00_Examples.ipynb
       - 01_Options.ipynb
+      - 02_Exporting plots.ipynb
       - section: API
         contents:
           - API/00_browser.ipynb
           - API/01_track.ipynb
+          - API/02_glyphs.ipynb
           - API/02_utils.ipynb

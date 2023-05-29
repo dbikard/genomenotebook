@@ -1,10 +1,10 @@
-__version__ = "0.6.6"
+__version__ = "0.7.0"
 
 from .data import get_example_data_dir
 from .browser import GenomeBrowser
 from .utils import (parse_gff,
-                    get_default_glyphs,
                     default_attributes
                    )
+from .glyphs import get_default_glyphs, get_feature_patches, Glyph
 from bokeh.io import output_notebook
 output_notebook(hide_banner=True) 
