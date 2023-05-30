@@ -5,7 +5,7 @@
 ``` python
 ```
 
-> Version (0.7.2)
+> Version (0.7.3)
 
 ## Install
 
@@ -28,7 +28,8 @@ Create a simple genome browser with a search bar. The sequence appears
 when zooming in.
 
 Tracks can be added to visualize your favorite genomics data. See
-`Examples` for more !!!!
+[Examples](https://dbikard.github.io/genomenotebook/examples.html) for
+more !!!!
 
 ``` python
 import genomenotebook as gn

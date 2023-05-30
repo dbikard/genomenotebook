@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.7.3
+
+- Improved documentation
+
+
 ## 0.7.2
 
 - Users now have the possibility to control the Bokeh toolbar
