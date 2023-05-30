@@ -34,10 +34,11 @@ class Track:
     """ Track objects should only be created through GenomeBrowser.add_track """
     def __init__(self,
                  height: int = 200, #size of the track
-                 output_backend="webgl" 
+                 tools: str = "xwheel_zoom, ywheel_zoom, pan, box_zoom, save, reset", #list of Bokeh tools that can be used to navigate the plot
+                 output_backend="webgl",
                 ):        
         self.height = height
-        self.fig = figure(tools="xwheel_zoom,ywheel_zoom,pan,box_zoom,save,reset",
+        self.fig = figure(tools=tools,
                           active_scroll="xwheel_zoom",
                           height=height,
                           y_axis_location="right", #this is required in order to keep a proper alignment with the sequence
