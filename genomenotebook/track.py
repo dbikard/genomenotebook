@@ -29,20 +29,27 @@ import warnings
 
 
 
-# %% ../nbs/API/01_track.ipynb 8
+# %% ../nbs/API/01_track.ipynb 9
 class Track:
     """ Track objects should only be created through GenomeBrowser.add_track """
     def __init__(self,
                  height: int = 200, #size of the track
-                 tools: str = "xwheel_zoom, ywheel_zoom, pan, box_zoom, save, reset", #list of Bokeh tools that can be used to navigate the plot
+                 tools: str = "xwheel_zoom, ywheel_zoom, pan, box_zoom, save, reset", #comma separated list of Bokeh tools that can be used to navigate the plot
                  output_backend="webgl",
+                 **kwargs,
                 ):        
         self.height = height
+
+        #ensuring that the active_scroll tool is part of the tools list 
+        if "xwheel_zoom" not in [t.strip() for t in tools.split(',')]:
+            tools+=", xwheel_zoom"
+
         self.fig = figure(tools=tools,
                           active_scroll="xwheel_zoom",
                           height=height,
                           y_axis_location="right", #this is required in order to keep a proper alignment with the sequence
-                          output_backend=output_backend)
+                          output_backend=output_backend,
+                          **kwargs)
         self.fig.xaxis[0].formatter = NumeralTickFormatter(format="0,0")
         self.track_loaded_data = None
         self.track_all_data = None
@@ -51,7 +58,7 @@ class Track:
         
 
 
-# %% ../nbs/API/01_track.ipynb 13
+# %% ../nbs/API/01_track.ipynb 14
 @patch
 def _set_track_data_source(self:Track, data, pos, columns):
     columns=[c for c in columns if c] #some arguments can be None => remove them
@@ -88,7 +95,7 @@ def _set_track_data_source(self:Track, data, pos, columns):
     self.fig.x_range.js_on_change('start', xcb)
 
 
-# %% ../nbs/API/01_track.ipynb 14
+# %% ../nbs/API/01_track.ipynb 15
 @patch
 def line(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -100,10 +107,10 @@ def line(self:Track,
     self.fig.line(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/API/01_track.ipynb 17
+# %% ../nbs/API/01_track.ipynb 18
 from bokeh.transform import factor_cmap
 
-# %% ../nbs/API/01_track.ipynb 18
+# %% ../nbs/API/01_track.ipynb 19
 @patch
 def scatter(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -125,13 +132,12 @@ def scatter(self:Track,
         self.fig.scatter(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/API/01_track.ipynb 23
+# %% ../nbs/API/01_track.ipynb 24
 @patch
 def bar(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
-         z: str = None, #name of a column containing numerical data rendered as a linear color map (cannot be used for line plots)
          factors: str = None, #name of a column of values to be used as factors
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
@@ -144,8 +150,6 @@ def bar(self:Track,
 
         self.fig.legend.location = "top_left"
         self.fig.legend.title = factors
-    elif z!=None:
-        pass
     else:
-        self.fig.vbar(source=source, x=pos, top=y, **kwargs)
+        self.fig.vbar(source=self.loaded_data, x=pos, top=y, **kwargs)
         

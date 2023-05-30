@@ -298,12 +298,16 @@ from .track import Track
 
 # %% ../nbs/API/00_browser.ipynb 27
 @patch
-def add_track(self:GenomeBrowser,
-             height:int = 200, #size of the track
+def add_track(self: GenomeBrowser,
+             height: int = 200, #size of the track
+             tools: str = "xwheel_zoom, ywheel_zoom, pan, box_zoom, save, reset", #comma separated list of Bokeh tools that can be used to navigate the plot
+             **kwargs,
              ) -> Track:
     """Adds a track to the GenomeBrowser. Ensures that the x_range are shared and figure widths are identical."""
     t = Track(height=height, 
-              output_backend=self.output_backend)
+              output_backend=self.output_backend,
+              tools=tools,
+              **kwargs)
     t.fig.x_range = self.x_range
     t.fig.frame_width = self.frame_width
     t.bounds = self.bounds
