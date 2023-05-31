@@ -20,19 +20,23 @@ from genomenotebook.glyphs import (
 
 from genomenotebook.javascript import (
     x_range_change_callback_code, 
-    search_callback_code, 
+    search_callback_code,
+    sequence_search_code,
+    next_button_code
 )
 from bokeh.models import (
     CustomJS,
     Range1d,
     ColumnDataSource,
     AutocompleteInput,
+    TextInput,
+    Button,
     Rect,
     Div,
     Styles
 )
 from bokeh.plotting import show
-from bokeh.layouts import column
+from bokeh.layouts import column, row
 
 from Bio import SeqIO
 
@@ -51,7 +55,7 @@ class GenomeBrowser:
                  init_win: int = 10000, #initial window size (max=20000)
                  bounds: tuple = None, #bounds can be specified. This helps preserve memory by not loading the whole genome if not needed.
                  show_seq: bool = True, #shows the sequence when zooming in
-                 search: bool = True, #enables a search bar to lookup a gene name or a DNA sequence
+                 search: bool = True, #enables a search bar
                  attributes: list = ["gene", "locus_tag", "product"], #list of attribute names from the GFF attributes column to be extracted
                  feature_name: str = "gene", #attribute to be displayed as the feature name
                  feature_types: list = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"], # list of feature types to display
@@ -162,7 +166,11 @@ class GenomeBrowser:
         if len(self.features)>0:
             self.elements = self._get_browser(output_backend=self.output_backend,**self.style_kwargs,**self.kwargs)
             if self.search:
-                self.elements = [self._get_search_box()]+self.elements
+                search_elements = [self._get_search_box()]
+                if self.show_seq:
+                     search_elements.append(self._get_sequence_search())
+                self.elements = [row(search_elements)]+self.elements
+                #self.elements = [self._get_search_box()]+self.elements
             show(column(self.elements + [t.fig for t in self.tracks]))
 
     def _get_browser(self, **kwargs):
@@ -191,13 +199,16 @@ class GenomeBrowser:
         
         # Adding the possibility to highlight regions
         highlight_source = ColumnDataSource(self.highlight_regions)
-        h=Rect(x='x',y=0,width='width',height=self.gene_track.height,fill_color="colors",fill_alpha="alpha",line_alpha=0)
-        self.gene_track.add_glyph(highlight_source, h)
+        r=Rect(x='x',y=0,
+               width='width',
+               height=self.gene_track.height,
+               fill_color="colors",
+               fill_alpha="alpha",
+               line_alpha=0)
+        self.gene_track.add_glyph(highlight_source, r)
         
         self.gene_track.frame_width=self.frame_width
 
-        
-        
         ## Adding the ability to display the sequence when zooming in
         sequence = {
             'seq': str(self.rec.seq).upper() if self.show_seq else "",
@@ -208,12 +219,10 @@ class GenomeBrowser:
                 font_family="Courrier",
                 color="black",
                 display="inline-block",
+                overflow="hidden",
                 background_color = "white",
                 margin="0",
                 margin_left= "2px",
-                #text_align= 'justify',
-                #text_justify= "inter-character", #only worked in some browsers
-                #width= str(self.frame_width)+"px",
                 )
         
         self._div = Div(height=18, height_policy="fixed", 
@@ -221,10 +230,9 @@ class GenomeBrowser:
                         max_width=self.frame_width,
                         width_policy="fixed",
                         styles = sty,
-                        ##id = f"seqDiv{id(self)}"
                         )
         
-        xcb = CustomJS(
+        self._xcb = CustomJS(
             args={
                 "x_range": self.gene_track.x_range,
                 "sequence": sequence,
@@ -236,7 +244,7 @@ class GenomeBrowser:
             code=x_range_change_callback_code
         )
 
-        self.gene_track.x_range.js_on_change('start', xcb)
+        self.gene_track.x_range.js_on_change('start', self._xcb)
         self.x_range=self.gene_track.x_range
 
         if self.show_seq:
@@ -244,20 +252,67 @@ class GenomeBrowser:
         else:
             return [self.gene_track]
         
+    def _get_sequence_search(self):
+        seq_input = TextInput(placeholder="search by sequence")
+        
+        sequence = {
+            'seq': str(self.rec.seq).upper() if self.show_seq else "",
+            'bounds':self.bounds,
+        }
+
+        ## Adding BoxAnnotation to highlight search results
+        search_span_source = ColumnDataSource({"x":[],"width":[],"fill_color":[]})#"y":[]
+        h=Rect(x='x',y=0,
+               width='width',
+               height=self.gene_track.height,
+               fill_color='fill_color',
+               line_color="fill_color",
+               fill_alpha=0.2,
+               line_alpha=0.4)
+        
+        self.gene_track.add_glyph(search_span_source, h)
+
+        call_back_sequence_search = CustomJS(
+            args={
+                "x_range": self.x_range,
+                "glyph_source": self._glyph_source,
+                "sequence": sequence,
+                "bounds": self.bounds,
+                "all_glyphs": self.patches.to_dict(orient="list"),
+                "loaded_range": self._loaded_range,
+                "search_span_source": search_span_source,
+                "div": self._div,
+            },
+            code=sequence_search_code
+        )
+
+        seq_input.js_on_change('value',call_back_sequence_search)
+        
+        nextButton = Button(label="next",button_type="primary")
+        
+        nextButton_callback = CustomJS(
+            args={
+                "x_range": self.x_range,
+                "bounds": self.bounds,
+                "search_span_source": search_span_source,
+            },
+            code=next_button_code)
+        
+        nextButton.js_on_event("button_click", nextButton_callback, self._xcb)
+
+        return row(seq_input,nextButton)
+    
     def _get_search_box(self):
         ## Create a text input widget for search
         completions=set()
-        for attr in self.patches.columns:
-            if not attr in ["xs","ys","color","pos"]:
-                completions.update(map(str,set(self.patches[attr])))
+        #for attr in self.patches.columns:
+        #    if not attr in ["xs","ys","color","pos"]:
+        #        completions.update(map(str,set(self.patches[attr])))
+        completions.update(map(str,set(self.patches["names"])))
         
-        text_input = AutocompleteInput(completions=list(completions), value="")
-
-        ## Adding BoxAnnotation to highlight search results
-        search_span_source = ColumnDataSource({"x":[],"width":[]})#"y":[]
-        h=Rect(x='x',y=-2,width='width',height=self.gene_track.height,fill_color='green',fill_alpha=0.2,line_alpha=0)
-        self.gene_track.add_glyph(search_span_source, h)
-
+        search_input = AutocompleteInput(completions=list(completions), placeholder="search by name")
+        #search_input = TextInput()
+        
         call_back_search = CustomJS(
             args={
                 "x_range": self.x_range,
@@ -265,16 +320,14 @@ class GenomeBrowser:
                 "bounds": self.bounds,
                 "all_glyphs": self.patches.to_dict(orient="list"),
                 "loaded_range": self._loaded_range,
-                "text_input": text_input,
-                "search_span_source": search_span_source,
                 "div": self._div,
             },
             code=search_callback_code
         )
 
-        text_input.js_on_change('value',call_back_search)#,xcb)
+        search_input.js_on_change('value', call_back_search, self._xcb)
 
-        return text_input
+        return search_input
     
 
 
@@ -320,7 +373,7 @@ def add_track(self: GenomeBrowser,
     return t
     
 
-# %% ../nbs/API/00_browser.ipynb 30
+# %% ../nbs/API/00_browser.ipynb 29
 from bokeh.io import export_svgs, export_svg, export_png
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
@@ -328,12 +381,13 @@ from selenium.webdriver.chrome.options import Options
 import os
 from svgutils import compose
 
-# %% ../nbs/API/00_browser.ipynb 31
+# %% ../nbs/API/00_browser.ipynb 30
 @patch
 def save(self:GenomeBrowser, 
-         fname
+         fname: str, #path to file or a simple name (extensions are automatically added)
         ):
-        """This function saves the initial plot that is generated and not the current view of the browser"""
+        """This function saves the initial plot that is generated and not the current view of the browser.
+        To save in svg format you must initialise your GenomeBrowser using `output_backend="svg"` """
         if len(self.features)>0:
             self.elements = self._get_browser(output_backend=self.output_backend,**self.style_kwargs,**self.kwargs)
             layout=column(self.elements + [t.fig for t in self.tracks])

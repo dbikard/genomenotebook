@@ -5,7 +5,7 @@
 ``` python
 ```
 
-> Version (0.7.3)
+> Version (0.7.4)
 
 ## Install
 
@@ -36,7 +36,7 @@ import genomenotebook as gn
 ```
 
 ``` python
-g=gn.GenomeBrowser(gff_path=gff_path, genome_path=genome_path, init_pos=10000)
+g=gn.GenomeBrowser(gff_path=gff_path, genome_path=fasta_path, init_pos=10000)
 g.show()
 ```
 

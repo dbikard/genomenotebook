@@ -19,6 +19,8 @@ def get_js_code(js_file):
 
 x_range_change_callback_code=get_js_code("x_range_change_callback_code.js")
 search_callback_code=get_js_code("search_callback_code.js")
+sequence_search_code=get_js_code("sequence_search_code.js")
 track_callback_code=get_js_code("track_callback_code.js")
+next_button_code=get_js_code("next_button_code.js")
 
 

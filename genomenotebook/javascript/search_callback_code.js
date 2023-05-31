@@ -21,6 +21,8 @@ if (pos !== null) {
   //Define new field of view
   x_range.start = (pos - 5000 < bounds[0]) ? bounds[0] : pos - 5000;
   x_range.end = (pos + 5000 > bounds[1]) ? bounds[1] : pos + 5000;
+
+  /*
   x_range.change.emit()
 
   //find the index of element 20kb away
@@ -41,4 +43,5 @@ if (pos !== null) {
   loaded_range.data.end[0] = all_glyphs['xs'][ix_stop][3];
   loaded_range.change.emit()
   div.text="";
+*/
 }

@@ -1,24 +1,16 @@
-let x_size = x_range.end - x_range.start;
+
+var x_size = x_range.end - x_range.start;
 
 // show the sequence when zoomed in enough
-let letterSpace = 9.6*x_size;
-if (letterSpace < div.width) {
-    //console.log(x_range.start);
-    let seq = sequence.seq.substring(Math.floor(x_range.start)-sequence.bounds[0], Math.floor(x_range.end)-sequence.bounds[0]+1);
+var letterSpace = 9.6*x_size;
+if (letterSpace < div.width && x_range.end>x_range.start) { 
+    /*for some weird reasons after a search sometimes x_range.end is smaller than x_range.start 
+    which causes unwanted behaviour*/
 
-    var spaceBetweenBases=div.width/x_size;
-
-    //let letter_spacing = (div.width-letterSpace)/x_size;
-    //div.styles.letter_spacing = letter_spacing + "px";
+    var seq = sequence.seq.substring(Math.floor(x_range.start)-sequence.bounds[0], Math.floor(x_range.end)-sequence.bounds[0]);
     
-    //This didn't work in all browsers
-    //var whitespace='&nbsp;'.repeat(parseInt(div.width/4)); //adds a line of whitespace to force the justification before the line return
-    //div.text = seq + ' <span style="white-space: nowrap">'+whitespace+'</span>'; // this enforces the inter-character text-justify on a single line
-
-    const divElement=document.getElementById(div.id);
-    //for (let attr in div) {
-    //     console.log(attr)   
-    //    }
+    var spaceBetweenBases=div.width/x_size;
+    
     // Loop through each character in the sequence
     div.text=""
     for (let i = 0; i < seq.length; i++) {
@@ -29,19 +21,17 @@ if (letterSpace < div.width) {
     var end_floatingPart = x_range.end % 1;
     
     var pad_left=parseInt(spaceBetweenBases*(1-start_floatingPart));
-    //var pad_right=parseInt(spaceBetweenBases*end_floatingPart);
     div.styles.padding_left = pad_left+"px";
-    //div.styles.padding_right = pad_right+"px";
-    div.change.emit()
 } else {
     div.text="";
-    div.change.emit()
+    
 }
 
+//div.change.emit()
 
-//If getting close to the edge of loaded glyphs, then reload them on current position
-if (x_range.start<loaded_range.data.start[0]+2000 || x_range.end>loaded_range.data.end[0]-2000){
-    //find the index of elements 20kb away
+
+function updateGlyphs() {
+    console.log("glyph update")
     const max_glyph_loading_range=loaded_range.data['range'][0]
     const ix_start_find = all_glyphs['xs'].findIndex((element) => Math.max(...element) > x_range.start - max_glyph_loading_range);
     const ix_stop_find = all_glyphs['xs'].findIndex((element) => Math.min(...element) > x_range.end + max_glyph_loading_range);
@@ -60,3 +50,19 @@ if (x_range.start<loaded_range.data.start[0]+2000 || x_range.end>loaded_range.da
     glyph_source.change.emit()
     loaded_range.change.emit()
 }
+
+//If getting close to the edge of loaded glyphs, then reload them on current position
+if (x_range.start<loaded_range.data.start[0]+2000 || x_range.end>loaded_range.data.end[0]-2000){
+    updateGlyphs()
+}
+
+//Old implementation that didn't work for all browsers
+    //let letter_spacing = (div.width-letterSpace)/x_size;
+    //div.styles.letter_spacing = letter_spacing + "px";
+    
+    //This didn't work in all browsers
+    //var whitespace='&nbsp;'.repeat(parseInt(div.width/4)); //adds a line of whitespace to force the justification before the line return
+    //div.text = seq + ' <span style="white-space: nowrap">'+whitespace+'</span>'; // this enforces the inter-character text-justify on a single line
+
+    //var pad_right=parseInt(spaceBetweenBases*end_floatingPart);
+    //div.styles.padding_right = pad_right+"px";
