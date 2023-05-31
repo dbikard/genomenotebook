@@ -29,7 +29,7 @@ import warnings
 
 
 
-# %% ../nbs/API/01_track.ipynb 9
+# %% ../nbs/API/01_track.ipynb 8
 class Track:
     """ Track objects should only be created through GenomeBrowser.add_track """
     def __init__(self,
@@ -58,7 +58,7 @@ class Track:
         
 
 
-# %% ../nbs/API/01_track.ipynb 14
+# %% ../nbs/API/01_track.ipynb 13
 @patch
 def _set_track_data_source(self:Track, data, pos, columns):
     columns=[c for c in columns if c] #some arguments can be None => remove them
@@ -95,7 +95,7 @@ def _set_track_data_source(self:Track, data, pos, columns):
     self.fig.x_range.js_on_change('start', xcb)
 
 
-# %% ../nbs/API/01_track.ipynb 15
+# %% ../nbs/API/01_track.ipynb 14
 @patch
 def line(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -107,10 +107,10 @@ def line(self:Track,
     self.fig.line(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/API/01_track.ipynb 18
+# %% ../nbs/API/01_track.ipynb 17
 from bokeh.transform import factor_cmap
 
-# %% ../nbs/API/01_track.ipynb 19
+# %% ../nbs/API/01_track.ipynb 18
 @patch
 def scatter(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -132,7 +132,7 @@ def scatter(self:Track,
         self.fig.scatter(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/API/01_track.ipynb 24
+# %% ../nbs/API/01_track.ipynb 23
 @patch
 def bar(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data

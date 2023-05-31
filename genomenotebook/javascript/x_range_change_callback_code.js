@@ -4,20 +4,34 @@ let x_size = x_range.end - x_range.start;
 let letterSpace = 9.6*x_size;
 if (letterSpace < div.width) {
     //console.log(x_range.start);
-    let seq = sequence.seq.substring(Math.floor(x_range.start)-sequence.bounds[0], Math.floor(x_range.end)-sequence.bounds[0]);
+    let seq = sequence.seq.substring(Math.floor(x_range.start)-sequence.bounds[0], Math.floor(x_range.end)-sequence.bounds[0]+1);
+
+    var spaceBetweenBases=div.width/x_size;
+
     //let letter_spacing = (div.width-letterSpace)/x_size;
     //div.styles.letter_spacing = letter_spacing + "px";
     
-    var whitespace='&nbsp;'.repeat(parseInt(div.width/4)); //adds a line of whitespace to force the justification before the line return
-    div.text = seq + ' <span style="white-space: nowrap">'+whitespace+'</span>'; // this enforces the inter-character text-justify on a single line
+    //This didn't work in all browsers
+    //var whitespace='&nbsp;'.repeat(parseInt(div.width/4)); //adds a line of whitespace to force the justification before the line return
+    //div.text = seq + ' <span style="white-space: nowrap">'+whitespace+'</span>'; // this enforces the inter-character text-justify on a single line
+
+    const divElement=document.getElementById(div.id);
+    //for (let attr in div) {
+    //     console.log(attr)   
+    //    }
+    // Loop through each character in the sequence
+    div.text=""
+    for (let i = 0; i < seq.length; i++) {
+        div.text+='<span style="width:' + spaceBetweenBases + 'px; display: inline-block; overflow: hidden">'+seq[i]+'</span>'
+    }
 
     var start_floatingPart = x_range.start % 1;
     var end_floatingPart = x_range.end % 1;
-    var spaceBetweenBases=div.width/x_size;
+    
     var pad_left=parseInt(spaceBetweenBases*(1-start_floatingPart));
-    var pad_right=parseInt(spaceBetweenBases*end_floatingPart);
+    //var pad_right=parseInt(spaceBetweenBases*end_floatingPart);
     div.styles.padding_left = pad_left+"px";
-    div.styles.padding_right = pad_right+"px";
+    //div.styles.padding_right = pad_right+"px";
     div.change.emit()
 } else {
     div.text="";

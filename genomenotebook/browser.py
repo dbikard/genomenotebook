@@ -201,7 +201,7 @@ class GenomeBrowser:
         ## Adding the ability to display the sequence when zooming in
         sequence = {
             'seq': str(self.rec.seq).upper() if self.show_seq else "",
-            'bounds':self.bounds
+            'bounds':self.bounds,
         }
         ## Setting the div that will display the sequence
         sty=Styles(font_size='14px',
@@ -211,8 +211,8 @@ class GenomeBrowser:
                 background_color = "white",
                 margin="0",
                 margin_left= "2px",
-                text_align= 'justify',
-                text_justify= "inter-character",
+                #text_align= 'justify',
+                #text_justify= "inter-character", #only worked in some browsers
                 #width= str(self.frame_width)+"px",
                 )
         
@@ -220,7 +220,8 @@ class GenomeBrowser:
                         width=self.frame_width, 
                         max_width=self.frame_width,
                         width_policy="fixed",
-                        styles = sty
+                        styles = sty,
+                        ##id = f"seqDiv{id(self)}"
                         )
         
         xcb = CustomJS(

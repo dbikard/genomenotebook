@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.7.4
+
+- changed the way to display the sequence so that it is compatible with more browsers
+
+
 ## 0.7.3
 
 - Improved documentation
