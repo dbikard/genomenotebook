@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.8.1
+
+- fixed nbdev sync issue
+
+
 ## 0.8.0
 
 - enabled sequence search
