@@ -54,6 +54,7 @@ class GenomeBrowser:
                  init_pos: int = None, #initial position to display
                  init_win: int = 10000, #initial window size (max=20000)
                  bounds: tuple = None, #bounds can be specified. This helps preserve memory by not loading the whole genome if not needed.
+                 max_interval: int = 100000, #maximum size of the field of view in bp
                  show_seq: bool = True, #shows the sequence when zooming in
                  search: bool = True, #enables a search bar
                  attributes: list = ["gene", "locus_tag", "product"], #list of attribute names from the GFF attributes column to be extracted
@@ -93,6 +94,7 @@ class GenomeBrowser:
         
         
         self.bounds=bounds
+        self.max_interval=max_interval
         self.search=search
         self.init_pos=init_pos
         self.init_win=init_win
@@ -129,7 +131,7 @@ class GenomeBrowser:
         self.x_range = Range1d(
             max(self.bounds[0],self.init_pos - semi_win), min(self.bounds[1],self.init_pos + semi_win), 
             bounds=self.bounds, 
-            max_interval=100000,
+            max_interval=self.max_interval,
             min_interval=30
         )
 
@@ -428,7 +430,9 @@ def save(self:GenomeBrowser,
                         )
                         offset+=t.height
                         
-                    compose.Figure(self.frame_width, total_height, *svgelements).save(f"{base_name}_composite.svg")
+                    compose.Figure(self.frame_width+50, # +50 accounts for axis and labels
+                                   total_height, 
+                                   *svgelements).save(f"{base_name}_composite.svg")
 
         elif self.output_backend=="webgl":
                 if ext.lower()==".svg":

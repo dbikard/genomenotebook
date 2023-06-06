@@ -22,6 +22,7 @@ nbs/API/*.gz
 nbs/*.gz
 nbs/*.svg
 nbs/*.png
+nbs/*.dat
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.8.2
+
+- widdened the plots during export to ensure that the axis is shown 
+
+
 ## 0.8.1
 
 - fixed nbdev sync issue
