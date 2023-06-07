@@ -65,8 +65,10 @@ def _set_track_data_source(self:Track, data, pos, columns):
     data=data.loc[(self.bounds[0] < data[pos]) & (data[pos] < self.bounds[1]),
                   [pos]+columns].copy()
     data=data.sort_values(pos)
+    
+    
     if len(data)>10**5:
-        warnings.warn("You are trying to plot more than 10^5 glyphs, this might crash your memory. \
+        warnings.warn("You are trying to plot more than 10^5 glyphs, this might overflow your memory. \
         Consider using bounds or reducing the number of datapoints.")
 
     y=columns[0]
@@ -74,7 +76,7 @@ def _set_track_data_source(self:Track, data, pos, columns):
     ymax = data[y].values.max()
     self.fig.y_range=Range1d(ymin,ymax,
                              bounds=(ymin,ymax))
-        
+    
     self.all_data=ColumnDataSource(data)
     self.loaded_data=ColumnDataSource(
         data.loc[(self.loaded_range.data["start"][0] < data[pos]
@@ -85,6 +87,7 @@ def _set_track_data_source(self:Track, data, pos, columns):
     xcb = CustomJS(
             args = {
                 "x_range": self.fig.x_range,
+                "pos": pos,
                 "all_data":self.all_data,
                 "loaded_data": self.loaded_data,
                 "track_loaded_range":self.loaded_range,

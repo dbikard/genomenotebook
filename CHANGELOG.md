@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.8.3
+
+- fixed issue with column name for tracks
+
+
 ## 0.8.2
 
 - widdened the plots during export to ensure that the axis is shown 

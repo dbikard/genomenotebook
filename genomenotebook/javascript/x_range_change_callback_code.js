@@ -31,7 +31,7 @@ if (letterSpace < div.width && x_range.end>x_range.start) {
 
 
 function updateGlyphs() {
-    console.log("glyph update")
+    //console.log("glyph update")
     const max_glyph_loading_range=loaded_range.data['range'][0]
     const ix_start_find = all_glyphs['xs'].findIndex((element) => Math.max(...element) > x_range.start - max_glyph_loading_range);
     const ix_stop_find = all_glyphs['xs'].findIndex((element) => Math.min(...element) > x_range.end + max_glyph_loading_range);
