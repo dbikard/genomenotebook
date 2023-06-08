@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.8.5
+
+- fixed order of sequence search results
+
+
 ## 0.8.4
 
 - improved sequence search javascript

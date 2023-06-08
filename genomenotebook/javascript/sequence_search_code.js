@@ -62,6 +62,22 @@ if (isDnaSequence) {
     //searchString = searchString;
     var positions = findSequence(sequence.seq,searchString)
     //console.log(positions)
+
+    // sorting by order in the sequence so that the next button works as expected
+    // Get the indices to maintain the association between the left and right arrays
+    const indices = positions.left.map((_, index) => index);
+
+    // Sort the indices based on the values in the right array
+    indices.sort((a, b) => positions.left[a] - positions.left[b]);
+
+    // Sort the arrays based on the sorted indices
+    positions.left = indices.map((index) => positions.left[index]);
+    positions.right = indices.map((index) => positions.right[index]);
+    positions.pos = indices.map((index) => positions.pos[index]);
+    positions.orientation = indices.map((index) => positions.orientation[index]);
+
+    console.log(positions)
+
     search_span_source.data['x'] = positions.pos.map(v => v+0.5);
     search_span_source.data['width'] = positions.width;
     search_span_source.data['fill_color'] = positions.orientation.map(function(item) {
