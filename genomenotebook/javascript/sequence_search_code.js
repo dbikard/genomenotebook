@@ -56,7 +56,6 @@ function findSequence(seq, searchString) {
 div.text="";
 let searchString = cb_obj.value.toUpperCase();
 let isDnaSequence = /^[ACGT]{4,}$/i.test(searchString);
-let pos = null;
 
 if (isDnaSequence) {
     //console.log("Searching for DNA sequence.");
@@ -76,5 +75,20 @@ if (isDnaSequence) {
                                                                     });
                                                                     
     search_span_source.change.emit();
-  } 
-
+    
+    // change the x_range to display the first hit starting from the current view and looping back from the begnining
+    if (search_span_source.data.x.length > 0) {
+      // first search from current position
+      var pos = search_span_source.data.x.find(function(item) {return item > x_range.start});
+      if (typeof pos==="undefined") { // if not found search from begining
+        pos = search_span_source.data.x[0];
+      }
+      console.log(pos)
+      if (typeof pos!=="undefined"){
+          var w = (x_range.end - x_range.start)/2;
+          //Define new field of view
+          x_range.start = (pos - w < bounds[0]) ? bounds[0] : pos - w;
+          x_range.end = (pos + w > bounds[1]) ? bounds[1] : pos + w;
+      }
+  }
+} 

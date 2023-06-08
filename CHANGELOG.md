@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.8.4
+
+- improved sequence search javascript
+
+
 ## 0.8.3
 
 - fixed issue with column name for tracks
