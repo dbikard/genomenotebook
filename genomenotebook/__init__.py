@@ -8,4 +8,7 @@ from .utils import (parse_gff,
                    )
 from .glyphs import get_default_glyphs, get_feature_patches, Glyph
 from bokeh.io import output_notebook
+
+from . import javascript as _js
+
 output_notebook(hide_banner=True) 

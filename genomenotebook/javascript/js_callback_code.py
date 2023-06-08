@@ -1,12 +1,12 @@
 import os
 
-def get_js_path():
+def _get_js_path():
     """
     Return the path to the module directory.
     """
     return os.path.dirname(__file__)
 
-def get_js_code(js_file):
+def _get_js_code(js_file):
     # Get the path of the current Python module
     module_path = os.path.abspath(__file__)
 
@@ -17,10 +17,11 @@ def get_js_code(js_file):
     with open(file_path, 'r') as handle:
         return ''.join(handle.readlines())
 
-x_range_change_callback_code=get_js_code("x_range_change_callback_code.js")
-search_callback_code=get_js_code("search_callback_code.js")
-sequence_search_code=get_js_code("sequence_search_code.js")
-track_callback_code=get_js_code("track_callback_code.js")
-next_button_code=get_js_code("next_button_code.js")
+x_range_change_callback_code=_get_js_code("x_range_change_callback_code.js")
+search_callback_code=_get_js_code("search_callback_code.js")
+sequence_search_code=_get_js_code("sequence_search_code.js")
+track_callback_code=_get_js_code("track_callback_code.js")
+next_button_code=_get_js_code("next_button_code.js")
+
 
 

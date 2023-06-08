@@ -60,7 +60,7 @@ let isDnaSequence = /^[ACGT]{4,}$/i.test(searchString);
 if (isDnaSequence) {
     //console.log("Searching for DNA sequence.");
     //searchString = searchString;
-    var positions = findSequence(sequence.seq,searchString)
+    var positions = findSequence(sequence.seq,searchString);
     //console.log(positions)
 
     // sorting by order in the sequence so that the next button works as expected
@@ -76,7 +76,7 @@ if (isDnaSequence) {
     positions.pos = indices.map((index) => positions.pos[index]);
     positions.orientation = indices.map((index) => positions.orientation[index]);
 
-    console.log(positions)
+    //console.log(positions);
 
     search_span_source.data['x'] = positions.pos.map(v => v+0.5);
     search_span_source.data['width'] = positions.width;
@@ -95,16 +95,16 @@ if (isDnaSequence) {
     // change the x_range to display the first hit starting from the current view and looping back from the begnining
     if (search_span_source.data.x.length > 0) {
       // first search from current position
-      var pos = search_span_source.data.x.find(function(item) {return item > x_range.start});
+      var x = search_span_source.data.x.find(function(item) {return item > x_range.start});
       if (typeof pos==="undefined") { // if not found search from begining
-        pos = search_span_source.data.x[0];
+        x = search_span_source.data.x[0];
       }
-      console.log(pos)
-      if (typeof pos!=="undefined"){
+      //console.log(pos)
+      if (typeof x!=="undefined"){
           var w = (x_range.end - x_range.start)/2;
           //Define new field of view
-          x_range.start = (pos - w < bounds[0]) ? bounds[0] : pos - w;
-          x_range.end = (pos + w > bounds[1]) ? bounds[1] : pos + w;
+          x_range.start = (x - w < bounds[0]) ? bounds[0] : x - w;
+          x_range.end = (x + w > bounds[1]) ? bounds[1] : x + w;
       }
   }
 } 
