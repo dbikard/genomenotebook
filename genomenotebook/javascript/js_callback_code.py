@@ -17,11 +17,7 @@ def _get_js_code(js_file):
     with open(file_path, 'r') as handle:
         return ''.join(handle.readlines())
 
-x_range_change_callback_code=_get_js_code("x_range_change_callback_code.js")
-search_callback_code=_get_js_code("search_callback_code.js")
-sequence_search_code=_get_js_code("sequence_search_code.js")
-track_callback_code=_get_js_code("track_callback_code.js")
-next_button_code=_get_js_code("next_button_code.js")
+
 
 
 

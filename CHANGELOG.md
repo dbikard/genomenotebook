@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.8.6
+
+- Added a previous button for sequence search
+- Improved javascript
+
+
 ## 0.8.5
 
 - fixed order of sequence search results

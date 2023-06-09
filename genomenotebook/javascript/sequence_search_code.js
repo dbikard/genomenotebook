@@ -53,7 +53,7 @@ function findSequence(seq, searchString) {
   return positions;
 }
 
-div.text="";
+
 let searchString = cb_obj.value.toUpperCase();
 let isDnaSequence = /^[ACGT]{4,}$/i.test(searchString);
 

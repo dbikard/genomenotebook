@@ -19,10 +19,12 @@ from genomenotebook.glyphs import (
 )
 
 from genomenotebook.javascript import (
-    x_range_change_callback_code, 
+    x_range_change_callback_code,
+    glyph_update_callback_code,
     search_callback_code,
     sequence_search_code,
-    next_button_code
+    next_button_code,
+    previous_button_code
 )
 from bokeh.models import (
     CustomJS,
@@ -33,7 +35,8 @@ from bokeh.models import (
     Button,
     Rect,
     Div,
-    Styles
+    Styles,
+    TablerIcon,
 )
 from bokeh.plotting import show
 from bokeh.layouts import column, row
@@ -245,8 +248,18 @@ class GenomeBrowser:
             },
             code=x_range_change_callback_code
         )
+        
+        self._glyph_update_callback = CustomJS(
+            args={
+                "x_range": self.gene_track.x_range,
+                "all_glyphs":self.patches.to_dict(orient="list"),
+                "glyph_source": self._glyph_source,
+                "loaded_range":self._loaded_range,
+            },
+            code=glyph_update_callback_code
+        )
 
-        self.gene_track.x_range.js_on_change('start', self._xcb)
+        self.gene_track.x_range.js_on_change('start', self._xcb, self._glyph_update_callback)
         self.x_range=self.gene_track.x_range
 
         if self.show_seq:
@@ -277,20 +290,26 @@ class GenomeBrowser:
         call_back_sequence_search = CustomJS(
             args={
                 "x_range": self.x_range,
-                "glyph_source": self._glyph_source,
                 "sequence": sequence,
                 "bounds": self.bounds,
-                "all_glyphs": self.patches.to_dict(orient="list"),
-                "loaded_range": self._loaded_range,
                 "search_span_source": search_span_source,
-                "div": self._div,
             },
             code=sequence_search_code
         )
 
-        seq_input.js_on_change('value',call_back_sequence_search)
+        seq_input.js_on_change('value',call_back_sequence_search, self._xcb, self._glyph_update_callback)
         
-        nextButton = Button(label="next",button_type="primary")
+        sty=Styles(
+                   margin_left="1px",
+                   margin_right="1px",
+                   border = "none",
+                   #width = "10px",
+                )
+        
+        nextButton = Button(icon=TablerIcon("arrow-right"),
+                            label="",
+                            #button_type="primary",
+                            styles = sty)
         
         nextButton_callback = CustomJS(
             args={
@@ -300,9 +319,25 @@ class GenomeBrowser:
             },
             code=next_button_code)
         
-        nextButton.js_on_event("button_click", nextButton_callback, self._xcb)
+        nextButton.js_on_event("button_click", nextButton_callback, self._xcb, self._glyph_update_callback)
+        
+        previousButton = Button(icon=TablerIcon("arrow-left"),
+                                label="",
+                                styles = sty,
+                                #button_type="primary"
+                               )
+        
+        previousButton_callback = CustomJS(
+            args={
+                "x_range": self.x_range,
+                "bounds": self.bounds,
+                "search_span_source": search_span_source,
+            },
+            code=previous_button_code)
+        
+        previousButton.js_on_event("button_click", previousButton_callback, self._xcb, self._glyph_update_callback)
 
-        return row(seq_input,nextButton)
+        return row(seq_input, previousButton, nextButton)
     
     def _get_search_box(self):
         ## Create a text input widget for search
@@ -327,7 +362,7 @@ class GenomeBrowser:
             code=search_callback_code
         )
 
-        search_input.js_on_change('value', call_back_search, self._xcb)
+        search_input.js_on_change('value', call_back_search, self._xcb, self._glyph_update_callback)
 
         return search_input
     
