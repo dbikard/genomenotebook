@@ -1,4 +1,4 @@
-__version__ = "0.8.6"
+__version__ = "0.8.7"
 
 from .data import get_example_data_dir
 from .browser import GenomeBrowser

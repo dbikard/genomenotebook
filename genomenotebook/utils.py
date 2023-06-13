@@ -107,7 +107,6 @@ def default_open_gz(gff_path):
 default_types=["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"]
 default_attributes=["gene", "locus_tag", "product"]
 
-
 def parse_gff(gff_path:str, # path to the gff file
               seq_id: str=None, # sequence id (first column of the gff)
               bounds: tuple=None, # (left limit, right limit)
@@ -139,7 +138,7 @@ def parse_gff(gff_path:str, # path to the gff file
         # Reset the file pointer to the beginning of the file buffer
         file_buffer.seek(0)
         if buffer_empty:
-            warnings.warn("The annotation DataFrame is empty. Check that the feature_types and seq_id are correct.")
+            warnings.warn("The annotation DataFrame is empty. Check that the feature_types and seq_id are correct, and that bounds (if specified) fall within the size of your genome.")
             df=pd.DataFrame(columns=["seq_id", "source","type","start","end","score","strand","phase","attributes"])
         else:
             df=pd.read_csv(file_buffer,sep="\t",header=None)

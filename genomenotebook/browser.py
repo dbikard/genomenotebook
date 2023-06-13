@@ -379,10 +379,11 @@ def highlight(self:GenomeBrowser,
              ):
     starts, stops = map(np.array,zip(*regions))
     width=stops-starts
+    x=(starts+stops)/2
     if not colors:
         colors=['green']*len(regions)
     alpha=[alpha]*len(regions)
-    self.highlight_regions={"x":starts,"width":width,"colors":colors, "alpha":alpha}
+    self.highlight_regions={"x":x,"width":width,"colors":colors, "alpha":alpha}
 
 # %% ../nbs/API/00_browser.ipynb 26
 from .track import Track

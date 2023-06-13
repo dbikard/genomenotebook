@@ -13,6 +13,7 @@ from bokeh.models import (
     ColumnDataSource,
     NumeralTickFormatter,
     Range1d,
+    HoverTool,
 )
 
 from .javascript import track_callback_code
@@ -96,6 +97,8 @@ def _set_track_data_source(self:Track, data, pos, columns):
         )
 
     self.fig.x_range.js_on_change('start', xcb)
+    tooltips=[(attr,f"@{attr}") for attr in set(columns)]
+    self.fig.add_tools(HoverTool(tooltips=tooltips))
 
 
 # %% ../nbs/API/01_track.ipynb 14
@@ -104,9 +107,10 @@ def line(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
+         hover_data: list = [], #list of column names to be shown when hovering over the data
          **kwargs #enables to pass keyword arguments used by the Bokeh function
         ):
-    self._set_track_data_source(data, pos, columns=[y])
+    self._set_track_data_source(data, pos, columns=[y]+hover_data)
     self.fig.line(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
@@ -120,9 +124,10 @@ def scatter(self:Track,
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
          factors: str = None, #name of a column of values to be used as factors
+         hover_data: list = [], #list of additional column names to be shown when hovering over the data
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
-    self._set_track_data_source(data, pos, columns=[y,factors])
+    self._set_track_data_source(data, pos, columns=[y,factors]+hover_data)
     
     if factors!=None:
         color=factor_cmap(factors,"Category10_10",tuple(set(data[factors].values)))
@@ -142,9 +147,10 @@ def bar(self:Track,
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
          factors: str = None, #name of a column of values to be used as factors
+         hover_data: list = [], #list of additional column names to be shown when hovering over the data
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
-    self._set_track_data_source(data, pos, columns=[y,factors])
+    self._set_track_data_source(data, pos, columns=[y,factors]+hover_data)
     
     if factors!=None:
         color=factor_cmap(factors,"Category10_3",tuple(set(data[factors].values)))

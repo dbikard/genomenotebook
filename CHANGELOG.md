@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.8.7
+
+- fixed highlight positions
+- added an hover tool for data tracks
+
+
 ## 0.8.6
 
 - Added a previous button for sequence search
