@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.8.8
+
+- Changed the highlight function to work with a pandas DataFrame
+- Refactored the code to make it easier to understand
+
+
 ## 0.8.7
 
 - fixed highlight positions

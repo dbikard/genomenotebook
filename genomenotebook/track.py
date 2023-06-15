@@ -9,6 +9,7 @@ from fastcore.basics import *
 from bokeh.plotting import figure
 
 from bokeh.models import (
+    Rect,
     CustomJS,
     ColumnDataSource,
     NumeralTickFormatter,
@@ -110,14 +111,17 @@ def line(self:Track,
          hover_data: list = [], #list of column names to be shown when hovering over the data
          **kwargs #enables to pass keyword arguments used by the Bokeh function
         ):
+    if type(hover_data)==str:
+        hover_data = [hover_data]
+        
     self._set_track_data_source(data, pos, columns=[y]+hover_data)
     self.fig.line(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/API/01_track.ipynb 17
+# %% ../nbs/API/01_track.ipynb 18
 from bokeh.transform import factor_cmap
 
-# %% ../nbs/API/01_track.ipynb 18
+# %% ../nbs/API/01_track.ipynb 19
 @patch
 def scatter(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -127,6 +131,9 @@ def scatter(self:Track,
          hover_data: list = [], #list of additional column names to be shown when hovering over the data
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
+    if type(hover_data)==str:
+        hover_data = [hover_data]
+        
     self._set_track_data_source(data, pos, columns=[y,factors]+hover_data)
     
     if factors!=None:
@@ -140,7 +147,7 @@ def scatter(self:Track,
         self.fig.scatter(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
-# %% ../nbs/API/01_track.ipynb 23
+# %% ../nbs/API/01_track.ipynb 25
 @patch
 def bar(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -150,6 +157,10 @@ def bar(self:Track,
          hover_data: list = [], #list of additional column names to be shown when hovering over the data
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
+    
+    if type(hover_data)==str:
+        hover_data = [hover_data]
+        
     self._set_track_data_source(data, pos, columns=[y,factors]+hover_data)
     
     if factors!=None:
@@ -162,3 +173,40 @@ def bar(self:Track,
     else:
         self.fig.vbar(source=self.loaded_data, x=pos, top=y, **kwargs)
         
+
+# %% ../nbs/API/01_track.ipynb 29
+@patch
+def highlight(self:Track,
+         data: pd.DataFrame, #pandas DataFrame containing the data
+         left: str = "left", #name of the column containing the start positions of the regions
+         right: str = "right", #name of the column containing the end positions of the regions
+         color: str = "color", #color of the regions
+         alpha: str = 0.2, #transparency
+         hover_data: list = [], #list of additional column names to be shown when hovering over the data
+         **kwargs, #enables to pass keyword arguments used by the Bokeh function
+        ):
+    
+    if type(hover_data)==str:
+        hover_data = [hover_data]
+
+    data["width"]=data[right]-data[left]
+    data["x"]=(data[left]+data[right])/2
+    if color not in data.columns:
+        data["color"]='green'
+
+    data["alpha"]=alpha
+
+    highlight_source = ColumnDataSource(data[[left,right,"width","x","color","alpha"]+hover_data])
+
+    r=Rect(x='x',y=0,
+            width='width',
+            height=self.height,
+            fill_color="color",
+            fill_alpha="alpha",
+            line_alpha=0,
+            **kwargs)
+
+    renderer= self.fig.add_glyph(highlight_source, r)
+    tooltips=[(f"{left} - {right}",f"@{left} - @{right}")]+[(f"{attr}",f"@{attr}") for attr in hover_data]
+    self.fig.add_tools(HoverTool(renderers=[renderer],
+                                        tooltips=tooltips))

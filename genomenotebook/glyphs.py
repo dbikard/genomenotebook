@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['Y_RANGE', 'default_glyphs', 'get_y_range', 'arrow_coordinates', 'box_coordinates', 'Glyph', 'get_default_glyphs',
-           'get_patch_coordinates', 'get_feature_name', 'get_feature_patches', 'create_genome_browser_plot']
+           'get_patch_coordinates', 'get_feature_name', 'get_feature_patches']
 
 # %% ../nbs/API/02_glyphs.ipynb 5
 import numpy as np
@@ -132,10 +132,11 @@ class Glyph:
         return r
 
 # %% ../nbs/API/02_glyphs.ipynb 11
-def get_default_glyphs():
-    """"Returns a dictionnary with:
-            - keys: feature types
-            - values: a Glyph object
+def get_default_glyphs() -> dict:
+    """Returns a dictionnary with:
+
+            * keys: feature types (str)
+            * values: a Glyph object
     """
     basic_arrow=Glyph(glyph_type="arrow",colors=("purple","orange"),alpha=0.8,show_name=True)
     basic_box=Glyph(glyph_type="box",colors=("grey",),alpha=1,height=0.8,show_name=False)
@@ -211,64 +212,3 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
             out[attr]=values.to_list() #tried to split long strings here but Bokeh then ignores it 
             
     return pd.DataFrame(out)
-
-# %% ../nbs/API/02_glyphs.ipynb 19
-def create_genome_browser_plot(glyphSource, 
-                               x_range, 
-                               attributes=default_attributes, 
-                               height = 150, 
-                               label_angle = 45,
-                               label_font_size = "10pt",
-                               output_backend = "webgl",
-                               feature_height = 0.15,
-                               **kwargs):
-    
-
-    y_min, y_max = get_y_range()
-    p_annot = figure(
-        tools = "xwheel_zoom, xpan, save, reset",
-        active_scroll = "xwheel_zoom",
-        height = height,
-        x_range = x_range,
-        y_range = Range1d(y_min, y_max),
-        output_backend=output_backend,
-        **kwargs
-    )
-    # Add tool
-    p_annot.add_tools(BoxZoomTool(dimensions="width"))
-
-    # Format x axis values
-    p_annot.xaxis[0].formatter = NumeralTickFormatter(format="0,0")
-    # Hide grid
-    p_annot.xgrid.visible = False
-    p_annot.ygrid.visible = False
-    # Hide axis
-    p_annot.yaxis.visible = False
-    glyph = p_annot.add_glyph(
-        glyphSource, Patches(xs="xs", ys="ys", fill_color="color", fill_alpha="alpha")
-    )
-    # gene labels in the annotation track
-    # This seems to be necessary to show the labels
-    p_annot.scatter(x="pos", y=0, size=0, source=glyphSource)
-    labels = LabelSet(
-        x="pos",
-        y=feature_height+0.07,
-        text="names",
-        level="glyph",
-        angle=label_angle,
-        text_font_size=label_font_size,
-        x_offset=-5,
-        y_offset=0,
-        source=glyphSource,
-        text_align='left',
-    )
-
-    p_annot.add_layout(labels)
-    tooltips=[(attr,f"@{attr}") for attr in attributes]
-    p_annot.add_tools(
-        HoverTool(
-            renderers=[glyph],
-            tooltips=tooltips,
-        )
-    )
-    return p_annot
