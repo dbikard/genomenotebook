@@ -9,7 +9,7 @@ from fastcore.basics import *
 from bokeh.plotting import figure
 
 from bokeh.models import (
-    Rect,
+    Quad,
     CustomJS,
     ColumnDataSource,
     NumeralTickFormatter,
@@ -35,6 +35,7 @@ import warnings
 class Track:
     """ Track objects should only be created through GenomeBrowser.add_track """
     def __init__(self,
+                 ylim: tuple = None, #limits of the y axis. If not specified, ylim will be set automatically with the max and min of the data plotted with Track.line, Track.scatter or Track.bar
                  height: int = 200, #size of the track
                  tools: str = "xwheel_zoom, ywheel_zoom, pan, box_zoom, save, reset", #comma separated list of Bokeh tools that can be used to navigate the plot
                  output_backend="webgl",
@@ -56,6 +57,13 @@ class Track:
         self.track_loaded_data = None
         self.track_all_data = None
         self.loaded_range = None
+        self.set_ylim(ylim)
+            
+    def set_ylim(self, ylim):
+        self._ylim=ylim
+        if self._ylim != None:
+            self.fig.y_range=Range1d(ylim[0],ylim[1],
+                                    bounds=ylim)
         
         
 
@@ -74,10 +82,12 @@ def _set_track_data_source(self:Track, data, pos, columns):
         Consider using bounds or reducing the number of datapoints.")
 
     y=columns[0]
-    ymin = data[y].values.min()
-    ymax = data[y].values.max()
-    self.fig.y_range=Range1d(ymin,ymax,
-                             bounds=(ymin,ymax))
+    if self._ylim == None:
+        ymin = data[y].values.min()
+        ymax = data[y].values.max()
+        self._ylim = (ymin, ymax)
+        self.fig.y_range=Range1d(ymin,ymax,
+                                bounds=(ymin,ymax))
     
     self.all_data=ColumnDataSource(data)
     self.loaded_data=ColumnDataSource(
@@ -189,22 +199,24 @@ def highlight(self:Track,
     if type(hover_data)==str:
         hover_data = [hover_data]
 
-    data["width"]=data[right]-data[left]
-    data["x"]=(data[left]+data[right])/2
     if color not in data.columns:
         data["color"]='green'
 
     data["alpha"]=alpha
 
-    highlight_source = ColumnDataSource(data[[left,right,"width","x","color","alpha"]+hover_data])
+    highlight_source = ColumnDataSource(data[[left,right,"color","alpha"]+hover_data])
 
-    r=Rect(x='x',y=0,
-            width='width',
-            height=self.height,
-            fill_color="color",
-            fill_alpha="alpha",
-            line_alpha=0,
-            **kwargs)
+    if self._ylim==None:
+        warnings.warn("When adding highlights to a track, ylim needs to be defined. \
+                      You can eigher set ylim manually when creating the track, or plot data using Track.line, Track.scatter or Track.bar before adding the highlight.")
+    
+    r=Quad(left=left, right=right,
+           bottom=self._ylim[0],
+           top=self._ylim[1],
+           fill_color="color",
+           fill_alpha="alpha",
+           line_alpha=0,
+           **kwargs)
 
     renderer= self.fig.add_glyph(highlight_source, r)
     tooltips=[(f"{left} - {right}",f"@{left} - @{right}")]+[(f"{attr}",f"@{attr}") for attr in hover_data]

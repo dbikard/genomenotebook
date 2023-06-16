@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.8.9
+
+- fixed a few issues with highlights
+
+
 ## 0.8.8
 
 - Changed the highlight function to work with a pandas DataFrame

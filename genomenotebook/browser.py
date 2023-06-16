@@ -43,7 +43,8 @@ from bokeh.models import (
     HoverTool, 
     NumeralTickFormatter, 
     LabelSet,
-    HoverTool
+    HoverTool,
+    Quad
 )
 
 from bokeh.plotting import figure
@@ -426,45 +427,9 @@ def show(self:GenomeBrowser):
             bk_show(column(self.elements + [t.fig for t in self.tracks]))
 
 # %% ../nbs/API/00_browser.ipynb 41
-@patch
-def highlight(self:GenomeBrowser,
-         data: pd.DataFrame, #pandas DataFrame containing the data
-         left: str = "left", #name of the column containing the start positions of the regions
-         right: str = "right", #name of the column containing the end positions of the regions
-         color: str = "color", #color of the regions
-         alpha: str = 0.2, #transparency
-         hover_data: list = [], #list of additional column names to be shown when hovering over the data
-         **kwargs, #enables to pass keyword arguments used by the Bokeh function
-        ):
-    
-    if type(hover_data)==str:
-        hover_data = [hover_data]
-
-    data["width"]=data[right]-data[left]
-    data["x"]=(data[left]+data[right])/2
-    if color not in data.columns:
-        data["color"]='green'
-
-    data["alpha"]=alpha
-
-    highlight_source = ColumnDataSource(data[[left,right,"width","x","color","alpha"]+hover_data])
-
-    r=Rect(x='x',y=0,
-            width='width',
-            height=self.height,
-            fill_color="color",
-            fill_alpha="alpha",
-            line_alpha=0)
-
-    renderer= self.gene_track.add_glyph(highlight_source, r)
-    tooltips=[(f"{left} - {right}",f"@{left} - @{right}")]+[(f"{attr}",f"@{attr}") for attr in hover_data]
-    self.gene_track.add_tools(HoverTool(renderers=[renderer],
-                                        tooltips=tooltips))
-
-# %% ../nbs/API/00_browser.ipynb 44
 from .track import Track
 
-# %% ../nbs/API/00_browser.ipynb 45
+# %% ../nbs/API/00_browser.ipynb 42
 @patch
 def add_track(self: GenomeBrowser,
              height: int = 200, #size of the track
@@ -487,7 +452,47 @@ def add_track(self: GenomeBrowser,
     return t
     
 
-# %% ../nbs/API/00_browser.ipynb 47
+# %% ../nbs/API/00_browser.ipynb 44
+@patch
+def highlight(self:GenomeBrowser,
+         data: pd.DataFrame, #pandas DataFrame containing the data
+         left: str = "left", #name of the column containing the start positions of the regions
+         right: str = "right", #name of the column containing the end positions of the regions
+         color: str = "color", #color of the regions
+         alpha: str = 0.2, #transparency
+         hover_data: list = [], #list of additional column names to be shown when hovering over the data
+         highlight_tracks: bool = False, #whether to highlight just the annotation track or also the other tracks
+         **kwargs, #enables to pass keyword arguments used by the Bokeh function
+        ):
+    
+    if type(hover_data)==str:
+        hover_data = [hover_data]
+
+    if color not in data.columns:
+        data["color"]='green'
+
+    data["alpha"]=alpha
+
+    highlight_source = ColumnDataSource(data[[left,right,"color","alpha"]+hover_data])
+
+    r=Quad(left=left, right=right,
+           bottom=0,
+           top=1,
+           fill_color="color",
+           fill_alpha="alpha",
+           line_alpha=0,
+           **kwargs)
+
+    renderer= self.gene_track.add_glyph(highlight_source, r)
+    tooltips=[(f"{left} - {right}",f"@{left} - @{right}")]+[(f"{attr}",f"@{attr}") for attr in hover_data]
+    self.gene_track.add_tools(HoverTool(renderers=[renderer],
+                                        tooltips=tooltips))
+    
+    if highlight_tracks:
+        for t in self.tracks:
+            t.highlight(data=data,left=left,right=right,color=color,alpha=alpha,hover_data=hover_data,**kwargs)
+
+# %% ../nbs/API/00_browser.ipynb 48
 from bokeh.io import export_svgs, export_svg, export_png
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
@@ -495,7 +500,7 @@ from selenium.webdriver.chrome.options import Options
 import os
 from svgutils import compose
 
-# %% ../nbs/API/00_browser.ipynb 48
+# %% ../nbs/API/00_browser.ipynb 49
 @patch
 def save(self:GenomeBrowser, 
          fname: str, #path to file or a simple name (extensions are automatically added)
