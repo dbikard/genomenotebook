@@ -1,0 +1,11 @@
+---
+order: 1
+title: API
+listing:
+  fields: [title, description]
+  type: table
+  sort-ui: false
+  filter-ui: false
+---
+
+This section contains API details for each of genomenotebook’s python submodules. This reference documentation is mainly useful for people looking to customise or build on top of genomenotebook.

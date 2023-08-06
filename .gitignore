@@ -7,12 +7,22 @@ _proc/
 .gitconfig
 *.bak
 *.log
+*.svg
+*.png
 *~
 ~*
 _tmp*
 tmp*
 tags
 *.pkg
+token
+
+# Data downloaded for testing
+nbs/API/*.gz
+nbs/*.gz
+nbs/*.svg
+nbs/*.png
+nbs/*.dat
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -26,6 +36,7 @@ __pycache__/
 .Python
 env/
 build/
+conda/
 develop-eggs/
 dist/
 downloads/
@@ -149,3 +160,4 @@ checklink/cookies.txt
 
 # Quarto
 .quarto
+

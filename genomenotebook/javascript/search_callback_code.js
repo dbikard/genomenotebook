@@ -1,77 +1,47 @@
-function getReverseComplement(seq) {
-    let complement = {
-      "A": "T",
-      "C": "G",
-      "G": "C",
-      "T": "A"
-    };
-    let reverseComplement = "";
-    for (let i = seq.length - 1; i >= 0; i--) {
-      reverseComplement += complement[seq[i]];
-    }
-    return reverseComplement;
-}
 
-div.text="";
 let searchString = cb_obj.value.toUpperCase();
-let isDnaSequence = /^[ACGT]{6,}$/i.test(searchString);
 let pos = null;
 
-if (isDnaSequence) {
-    console.log("Searching for DNA sequence.");
-    //searchString = searchString;
-    let searchStart = x_range.start-sequence.bounds[0];
-    let seq = sequence.seq.substring(searchStart);
-    let startPos = seq.indexOf(searchString) + searchStart + sequence.bounds[0];
-
-
-    if (startPos === -1) {
-    // Search the reverse complement of the search string
-    let reverseComplement = getReverseComplement(searchString);
-    let reverseStartPos = seq.indexOf(reverseComplement) + searchStart + sequence.bounds[0];
-
-    if (reverseStartPos === -1) {
-        // Substring not found in either forward or reverse complement
-        console.log("Substring not found.");
-        return;
-    } else {
-        // Found in reverse complement
-        startPos = reverseStartPos;
-    }
-    }
-
-    let endPos = startPos + searchString.length;
-    pos = (startPos + endPos) / 2;
-
-    //div.text += searchString + pos;
-    x_range.start = pos - 14;
-    x_range.end = pos + 14;
-    search_span_source.data['x'] = [pos];
-    search_span_source.data['width'] = [endPos - startPos];
-    search_span_source.change.emit();
-} else { 
-  //looking for the position of a gene
-  console.log("Searching for gene name")
-  let ix = all_glyphs['names'].findIndex((element) => element.toUpperCase().includes(searchString));
-  let g = all_glyphs['names'].find((element) => element.toUpperCase().includes(searchString));
-  console.log(g)
-  pos = all_glyphs['xs'][ix][0];
-  x_range.start = pos - 5000;
-  x_range.end = pos + 5000;
-}
-
-
-//Select the glyph elements in the 20kb range of the searched gene
-const x_start = pos - 20000
-const x_end = pos + 20000
-
-//find the index of element 20kb away
-const ix_start = all_glyphs['xs'].findIndex((element) => element[0] > x_start);
-const ix_stop = all_glyphs['xs'].findIndex((element) => element[0] > x_end);
-
+//looking for the position of a gene
 for (let attr in all_glyphs) {
-  glyph_source.data[attr] = all_glyphs[attr].slice(ix_start, ix_stop);
+  const firstElement = all_glyphs[attr][0];
+  if (typeof firstElement !== 'string') {
+    continue; // Skip the loop iteration if the first element is not a string
+  }
+
+  let ix = all_glyphs[attr].findIndex((element) => element.toUpperCase() === searchString);
+
+  if (ix !== -1) {
+    pos = all_glyphs['xs'][ix][0];
+    break;
+  }
 }
 
-glyph_source.change.emit()
-x_range.change.emit()
+if (pos !== null) {
+  //Define new field of view
+  x_range.start = (pos - 5000 < bounds[0]) ? bounds[0] : pos - 5000;
+  x_range.end = (pos + 5000 > bounds[1]) ? bounds[1] : pos + 5000;
+
+  /*
+  x_range.change.emit()
+
+  //find the index of element 20kb away
+  const max_glyph_loading_range=loaded_range.data['range'][0]
+  const ix_start_find = all_glyphs['xs'].findIndex((element) => element[3] > x_range.start - max_glyph_loading_range);
+  const ix_stop_find = all_glyphs['xs'].findIndex((element) => element[0] > x_range.end + max_glyph_loading_range);
+  const last_ix = all_glyphs['xs'].length - 1;
+  const ix_start = ix_start_find === -1 ? 0 : ix_start_find; // takes the first element if element not found
+  const ix_stop = ix_stop_find === -1 ? last_ix : ix_stop_find; // takes the last element if element not found
+
+  //Select the glyph elements in the 20kb range of the searched gene
+  for (let attr in all_glyphs) {
+    glyph_source.data[attr] = all_glyphs[attr].slice(ix_start, ix_stop + 1);
+  }
+  glyph_source.change.emit()
+
+  loaded_range.data.start[0] = all_glyphs['xs'][ix_start][0];
+  loaded_range.data.end[0] = all_glyphs['xs'][ix_stop][3];
+  loaded_range.change.emit()
+  div.text="";
+*/
+}
