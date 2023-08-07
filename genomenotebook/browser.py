@@ -49,6 +49,8 @@ from bokeh.models import (
 
 from bokeh.plotting import figure
 from bokeh.plotting import show as bk_show #Need to rename the bokeh show function so that there is no confusion with GenomeBrowser.show
+from bokeh.plotting import save as bk_save #Need to rename the bokeh show function so that there is no confusion with GenomeBrowser.show
+from bokeh.plotting import output_file as bk_output_file #Need to rename the bokeh show function so that there is no confusion with GenomeBrowser.show
 from bokeh.layouts import column, row
 
 from Bio import SeqIO
@@ -56,6 +58,8 @@ from Bio import SeqIO
 import numpy as np
 import pandas as pd
 import warnings
+from typing import Union, List, Dict, Optional
+import collections
 
 
 # %% ../nbs/API/00_browser.ipynb 6
@@ -63,7 +67,7 @@ class GenomeBrowser:
     """Initialize a GenomeBrowser object.
     """
     def __init__(self,
-                 gff_path: str, #path to the gff3 file of the annotations (also accepts gzip files)
+                 gff_path: str = None, #path to the gff3 file of the annotations (also accepts gzip files)
                  genome_path: str = None, #path to the fasta file of the genome sequence
                  seq_id: str = None, #id of the sequence to show for genomes with multiple contigs
                  init_pos: int = None, #initial position to display
@@ -72,8 +76,8 @@ class GenomeBrowser:
                  max_interval: int = 100000, #maximum size of the field of view in bp
                  show_seq: bool = True, #shows the sequence when zooming in
                  search: bool = True, #enables a search bar
-                 attributes: list = ["gene", "locus_tag", "product"], #list of attribute names from the GFF attributes column to be extracted
-                 feature_name: str = "gene", #attribute to be displayed as the feature name
+                 attributes: Union[list,Dict[str,Optional[list]]] = ["gene", "locus_tag", "product"], #list of attribute names from the GFF attributes column to be extracted. If dict then keys are feature types and values are lists of attributes. If None, then all attributes will be used.
+                 feature_name: Union[str, dict] = "gene", #attribute to be displayed as the feature name. If str then use the same field for every feature type. If dict then keys are feature types and values are feature name attribute.
                  feature_types: list = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"], # list of feature types to display
                  glyphs: dict = None, #dictionnary defining the type and color of glyphs to display for each feature type
                  height: int = 150, # height of the annotation track
@@ -82,15 +86,15 @@ class GenomeBrowser:
                  label_font_size: str = "10pt", # font size fo the feature names
                  feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
                  output_backend: str ="webgl", #can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
+                 features:pd.DataFrame = None, # DataFrame with columns: ["seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes"], where "attributes" is a dict of attributes.
                  **kwargs, #additional keyword arguments are passed as is to bokeh.plotting.figure
                  ):
         
         self.gff_path = gff_path
         self.genome_path = genome_path
         self.show_seq = show_seq if genome_path!=None else False
-        self.attributes = attributes
         self.feature_types = feature_types
-        self.feature_name = feature_name
+        
         self.feature_height = feature_height
         self.glyphs = get_default_glyphs() if glyphs==None else glyphs
         self.output_backend=output_backend
@@ -105,20 +109,52 @@ class GenomeBrowser:
         self.frame_width = width
         self.kwargs=kwargs
         self.max_glyph_loading_range = 20000
-
-        self.features = parse_gff(gff_path,
-                                seq_id=seq_id,
-                                bounds=bounds,
-                                feature_types=feature_types
-                                )
+        self.tracks=[]
+        
+        # determine feature_name for each feature_type
+        if type(feature_name) is str:
+            self.feature_name = {feature_type:feature_name for feature_type in feature_types}
+        else: # make sure feature_name is defined for all feature_types
+            seen = 0
+            for feature_type in feature_types:
+                if feature_type in feature_name:
+                    seen += 1
+            if len(feature_types) > seen:
+                raise ValueError("If features_name supplied as dict, it must specify a feature name for all feature types")
+        
+        # determine attributes for each feature_type
+        if isinstance(attributes,collections.Mapping):
+            seen = 0
+            for feature_type in feature_types:
+                if feature_type in attributes:
+                    seen += 1
+            if len(feature_types) > seen:
+                raise ValueError("If attributes supplied as dict, it must specify a feature name for all feature types")
+        else:
+            self.attributes = {feature_type:attributes for feature_type in feature_types}
+        
+        # check if gff or features df passed in.
+        if (self.gff_path is None and features is None) or \
+            (self.gff_path is not None and features is not None):
+            raise ValueError("Must specify either gff_path, or features, but not both")
+        
+        elif self.gff_path is not None:
+            self.features = parse_gff(gff_path,
+                                    seq_id=seq_id,
+                                    bounds=bounds,
+                                    feature_types=feature_types
+                                    )
+        else:
+             self.features = features   
         
         if len(self.features)>0:
             self._prepare_data()
             self._get_gene_track()
             
     def _prepare_data(self):
-        if self.feature_name not in self.features.columns:
-            self.features[self.feature_name]=""
+#         if self.feature_name not in self.features.columns:
+#             self.features[self.feature_name]=""
+        self.features["name"] = self.features.apply(self._get_feature_name, axis=1)
 
         self.seq_id = self.features.seq_id[0]
         self._get_sequence()
@@ -159,7 +195,6 @@ class GenomeBrowser:
             warnings.warn("You requested an initial window larger than max_interval. Change max_interval to plot a larger window (this might overload your memory)")
         self.init_win = min(min(self.init_win,self.bounds[1]-self.bounds[0]),self.max_interval)
 
-        self.tracks=[]
         semi_win = self.init_win / 2
             
         self.x_range = Range1d(
@@ -199,6 +234,15 @@ class GenomeBrowser:
             warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos=sum(self.bounds)//2
     
+    def _get_feature_name(self, row):
+        if row["type"] in self.feature_name:
+            if self.feature_name[row["type"]] in row["attributes"]:
+                return row["attributes"][self.feature_name[row["type"]]]
+            elif len(row["attributes"]) > 0:
+                return next(iter(row["attributes"].values()))
+        
+        return ""
+
 
 # %% ../nbs/API/00_browser.ipynb 12
 @patch
@@ -239,11 +283,10 @@ def _add_annotations(self:GenomeBrowser):
     )
 
     self.gene_track.add_layout(labels)
-    tooltips=[(attr,f"@{attr}") for attr in self.attributes]
     self.gene_track.add_tools(
         HoverTool(
             renderers=[glyph_renderer],
-            tooltips=tooltips,
+            tooltips="<div>@attributes</div>",
         )
     )
 
@@ -415,21 +458,39 @@ def _get_search_box(self:GenomeBrowser):
 
 # %% ../nbs/API/00_browser.ipynb 24
 @patch
+def collect_elements(self:GenomeBrowser):
+    elements = self.elements.copy()
+    if len(self.features)>0:
+        self._get_browser_elements() 
+        if self.search:
+            search_elements = [self._get_search_box()]
+            if self.show_seq:
+                 search_elements.append(self._get_sequence_search())
+            elements = [row(search_elements)]+elements
+
+    for track in self.tracks:
+        elements.append(track.fig)
+    return elements
+
+# %% ../nbs/API/00_browser.ipynb 25
+@patch
 def show(self:GenomeBrowser):
-        if len(self.features)>0:
-            self._get_browser_elements() 
-            if self.search:
-                search_elements = [self._get_search_box()]
-                if self.show_seq:
-                     search_elements.append(self._get_sequence_search())
-                self.elements = [row(search_elements)]+self.elements
+    #bk_output_file("", "")
+    elements = self.collect_elements()
 
-            bk_show(column(self.elements + [t.fig for t in self.tracks]))
+    bk_show(column(elements))
 
-# %% ../nbs/API/00_browser.ipynb 41
+# %% ../nbs/API/00_browser.ipynb 26
+@patch
+def save_html(self:GenomeBrowser, path:str, title:str=""):
+    bk_output_file(path, title)
+    elements = self.collect_elements()
+    bk_save(column(elements), filename=path, title=title)
+
+# %% ../nbs/API/00_browser.ipynb 43
 from .track import Track
 
-# %% ../nbs/API/00_browser.ipynb 42
+# %% ../nbs/API/00_browser.ipynb 44
 @patch
 def add_track(self: GenomeBrowser,
              height: int = 200, #size of the track
@@ -452,7 +513,7 @@ def add_track(self: GenomeBrowser,
     return t
     
 
-# %% ../nbs/API/00_browser.ipynb 44
+# %% ../nbs/API/00_browser.ipynb 46
 @patch
 def highlight(self:GenomeBrowser,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -492,7 +553,7 @@ def highlight(self:GenomeBrowser,
         for t in self.tracks:
             t.highlight(data=data,left=left,right=right,color=color,alpha=alpha,hover_data=hover_data,**kwargs)
 
-# %% ../nbs/API/00_browser.ipynb 48
+# %% ../nbs/API/00_browser.ipynb 50
 from bokeh.io import export_svgs, export_svg, export_png
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
@@ -500,7 +561,7 @@ from selenium.webdriver.chrome.options import Options
 import os
 from svgutils import compose
 
-# %% ../nbs/API/00_browser.ipynb 49
+# %% ../nbs/API/00_browser.ipynb 51
 @patch
 def save(self:GenomeBrowser, 
          fname: str, #path to file or a simple name (extensions are automatically added)

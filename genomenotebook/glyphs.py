@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['Y_RANGE', 'default_glyphs', 'get_y_range', 'arrow_coordinates', 'box_coordinates', 'Glyph', 'get_default_glyphs',
-           'get_patch_coordinates', 'get_feature_name', 'get_feature_patches']
+           'get_patch_coordinates', 'get_tooltip', 'get_feature_patches']
 
 # %% ../nbs/API/02_glyphs.ipynb 5
 import numpy as np
@@ -29,6 +29,7 @@ from collections import defaultdict
 import os
 from typing import *
 import copy
+import html
 
 # %% ../nbs/API/02_glyphs.ipynb 6
 from collections import defaultdict
@@ -155,32 +156,33 @@ def get_patch_coordinates(feature, glyphs_dict, feature_height=0.15):
     return glyph.get_patch(feature, feature_height=feature_height)
 
 # %% ../nbs/API/02_glyphs.ipynb 15
-def get_feature_name(feature,
-                     glyphs_dict,
-                     name="gene",
-                     attributes: list = default_attributes,
-                    ) -> str:
-    """Gets the name of the feature to be displayed. If the Glyph for the feature type has the attribute show_name=False then an empty string is returned.
-    If name is not an attribute of the feature, then the first attribute in the attributes list is used.
-    """
-    if glyphs_dict[feature.type].show_name:
-        if hasattr(feature,name):
-            if feature[name]:
-                return feature[name]
-        
-        for attr in attributes:
-            if feature[attr]:
-                return feature[attr]
-        
-        return feature[9]
-    else:
-        return ""
+def get_tooltip(feature, attributes):
+    
+    def _format_attribute(name, value, color="DodgerBlue"):
+        return f'<span style="color:{color}">{html.escape(name)}</span><span>: {html.escape(value)}</span>'
+    
+    row_type = feature["type"]
+    tooltips = list()
+    tooltips.append(f'<span style="color:FireBrick">{feature["type"]}</span>')
+    if row_type in attributes:
+        if attributes[row_type] is not None:
+            for attribute in attributes[row_type]:
+                if attribute in feature["attributes"]:
+                    tooltips.append(_format_attribute(attribute, feature['attributes'][attribute]))
+        else: # append all
+            for attribute in feature["attributes"]:
+                tooltips.append(_format_attribute(attribute, feature['attributes'][attribute]))
+    return "<br>".join(tooltips)
+
+            
+    
+    
 
 # %% ../nbs/API/02_glyphs.ipynb 17
 def get_feature_patches(features: pd.DataFrame, #DataFrame of the features 
                         left: int, #left limit
                         right: int, #right limit
-                        glyphs_dict: dict, #a dictionnary of glyphs to use for each feature type
+                        glyphs_dict: dict, #a dictionary of glyphs to use for each feature type
                         attributes: list = default_attributes, #list of attributes to display when hovering
                         name: str = default_attributes[0], #attribute to be displayed as the feature name
                         feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
@@ -193,22 +195,22 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
     else:
         colors = []
         xs, ys = [], []
-        
-    names=list(features.apply(get_feature_name,
-                         name=name,
-                         glyphs_dict=glyphs_dict,
-                         axis=1))
-        
-    out=dict(names=list(names),
+    
+    names=list(features.apply(lambda row: row["name"] if glyphs_dict[row.type].show_name else "",
+                             axis=1)
+              )
+    
+    tooltips=list(features.apply(lambda row: get_tooltip(row, attributes),
+                             axis=1)
+                 )
+    
+    out=dict(names=names,
              xs=list(xs),
              ys=list(ys),
              color=list(colors),
              alpha=list(alphas),
              pos=list(features.middle.values),
+             attributes=tooltips
             )
-    for attr in attributes:
-        if attr in features.columns:
-            values=features[attr].fillna("").astype(str)
-            out[attr]=values.to_list() #tried to split long strings here but Bokeh then ignores it 
-            
+    
     return pd.DataFrame(out)

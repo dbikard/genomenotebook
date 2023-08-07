@@ -2,15 +2,15 @@
 
 # %% auto 0
 __all__ = ['default_types', 'default_attributes', 'download_file', 'is_gzipped_file', 'default_open_gz', 'extract_attribute',
-           'extract_all_attributes', 'attributes_to_columns', 'set_positions', 'parse_gff', 'available_feature_types',
-           'available_attributes', 'in_wsl', 'add_extension']
+           'extract_all_attributes', 'set_positions', 'parse_gff', 'available_feature_types', 'available_attributes',
+           'in_wsl', 'add_extension']
 
 # %% ../nbs/API/02_utils.ipynb 5
 import numpy as np
 import pandas as pd
 import io
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import warnings
 import gzip
 import urllib.request
@@ -60,27 +60,28 @@ def extract_attribute(input_str:str, #attribute string to parse
         return None
 
 # %% ../nbs/API/02_utils.ipynb 13
-def extract_all_attributes(input_str:str)->dict:
+def extract_all_attributes(input_str:str)->OrderedDict: #TODO: why is this not limited by the attributes subset provided to GenomeBrowser?
     """Extracts all attributes from the GFF attributes column"""
     
     pattern = "(?P<key>\w+[-\w]*)=(?P<value>[^;]+)"
     match = re.findall(pattern, input_str)
-    d=defaultdict()
+    d=OrderedDict()
     d.update(match)
     return d
 
 # %% ../nbs/API/02_utils.ipynb 15
-def attributes_to_columns(features: pd.DataFrame):
-    attr_dicts=features.attributes.apply(extract_all_attributes)
-    all_keys=list(set().union(*[d.keys() for d in attr_dicts]))
+# def attributes_to_columns(features: pd.DataFrame): #TODO: why extract all attributes and not just the ones needed for the annotations?
+#     features.attributes = features.attributes.apply(extract_all_attributes)
     
-    attr_dict=dict([(k,[d.get(k,None) for d in attr_dicts]) for k in all_keys])
-    features=features.copy()
-    for k,v in attr_dict.items():
-        features[k]=v
+# #     all_keys=list(set().union(*[d.keys() for d in attr_dicts]))
     
-    features.fillna("")
-    return features
+# #     attr_dict=dict([(k,[d.get(k,None) for d in attr_dicts]) for k in all_keys])
+# #     features=features.copy()
+# #     for k,v in attr_dict.items():
+# #         features[k]=v
+    
+# #     features.fillna("")
+#     return features
     
 
 # %% ../nbs/API/02_utils.ipynb 16
@@ -145,7 +146,7 @@ def parse_gff(gff_path:str, # path to the gff file
         else:
             df=pd.read_csv(file_buffer,sep="\t",header=None)
             df.columns=["seq_id", "source","type","start","end","score","strand","phase","attributes"]
-            df=attributes_to_columns(df)
+            df["attributes"] = df["attributes"].map(extract_all_attributes)
             df=set_positions(df)
      
         return df
