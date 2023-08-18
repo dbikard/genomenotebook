@@ -84,9 +84,14 @@ class GenomeBrowser:
                  width: int = 600, # width of the inner frame of the browser
                  label_angle: int = 45, # angle of the feature names displayed on top of the features
                  label_font_size: str = "10pt", # font size fo the feature names
+                 label_justify: str = "center", # center, left
+                 label_vertical_offset: int = 0.07,
+                 label_horizontal_offset = -5,
+                 show_labels = True,
                  feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
                  output_backend: str ="webgl", #can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
                  features:pd.DataFrame = None, # DataFrame with columns: ["seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes"], where "attributes" is a dict of attributes.
+                 color_attribute = None, # feature attribute to be used as patch color
                  **kwargs, #additional keyword arguments are passed as is to bokeh.plotting.figure
                  ):
         
@@ -110,6 +115,12 @@ class GenomeBrowser:
         self.kwargs=kwargs
         self.max_glyph_loading_range = 20000
         self.tracks=[]
+        self.color_attribute = color_attribute
+        self.label_justify = label_justify
+        self.show_labels = show_labels
+        self.label_vertical_offset = label_vertical_offset
+        self.label_horizontal_offset = label_horizontal_offset
+        
         
         # determine feature_name for each feature_type
         if type(feature_name) is str:
@@ -121,7 +132,7 @@ class GenomeBrowser:
                     seen += 1
             if len(feature_types) > seen:
                 raise ValueError("If features_name supplied as dict, it must specify a feature name for all feature types")
-        
+            self.feature_name = feature_name
         # determine attributes for each feature_type
         if isinstance(attributes,collections.Mapping):
             seen = 0
@@ -168,6 +179,7 @@ class GenomeBrowser:
                                             attributes=self.attributes,
                                             name = self.feature_name,
                                             feature_height = self.feature_height,
+                                            color_attribute = self.color_attribute
                                             )
         
     def _get_sequence(self):
@@ -255,6 +267,12 @@ def _add_annotations(self:GenomeBrowser):
             lambda x: min(x)<self.x_range.end+self.max_glyph_loading_range)
         )]
     
+    feature_patches["label_y"] = feature_patches["ys"].map(min) + self.feature_height + self.label_vertical_offset
+    if self.label_justify == "center":
+        label_x = "pos"
+    elif self.label_justify == "left":
+        feature_patches["label_x"] = feature_patches["xbox_min"]
+        label_x = "label_x"
     self._glyph_source = ColumnDataSource(feature_patches.to_dict(orient="list"))
     
     #Information about the range currently plotted
@@ -268,21 +286,24 @@ def _add_annotations(self:GenomeBrowser):
     # gene labels in the annotation track
     # This seems to be necessary to show the labels
     self.gene_track.scatter(x="pos", y=0, size=0, source=self._glyph_source)
+    
+    #ys = list()
+    
+    if self.show_labels:
+        labels = LabelSet(
+            x="label_x",
+            y="label_y",
+            text="names",
+            level="glyph",
+            x_offset=self.label_horizontal_offset,
+            y_offset=0,
+            source=self._glyph_source,
+            text_align='left',
+            text_font_size=self.label_font_size,
+            angle=self.label_angle,
+        )
 
-    labels = LabelSet(
-        x="pos",
-        y=self.feature_height+0.07,
-        text="names",
-        level="glyph",
-        x_offset=-5,
-        y_offset=0,
-        source=self._glyph_source,
-        text_align='left',
-        text_font_size=self.label_font_size,
-        angle=self.label_angle,
-    )
-
-    self.gene_track.add_layout(labels)
+        self.gene_track.add_layout(labels)
     self.gene_track.add_tools(
         HoverTool(
             renderers=[glyph_renderer],

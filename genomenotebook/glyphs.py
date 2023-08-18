@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['Y_RANGE', 'default_glyphs', 'get_y_range', 'arrow_coordinates', 'box_coordinates', 'Glyph', 'get_default_glyphs',
-           'get_patch_coordinates', 'get_tooltip', 'get_feature_patches']
+           'get_patch_coordinates', 'html_wordwrap', 'get_tooltip', 'get_feature_patches']
 
 # %% ../nbs/API/02_glyphs.ipynb 5
 import numpy as np
@@ -51,8 +51,10 @@ def arrow_coordinates(feature,
     
     if feature.strand=="+":
         arrow_base = feature.end - np.minimum(feature_size, 100)
+        xbox_min = feature.start
     else:
         arrow_base = feature.end + np.minimum(feature_size, 100)
+        xbox_min = arrow_base
     
     xs=(feature.start,
         feature.start,
@@ -65,7 +67,9 @@ def arrow_coordinates(feature,
     y_min = 0.05+offset
     y_max = 0.05+feature_height-offset
     ys = (y_min, y_max, y_max, (y_max + y_min) / 2, y_min)
-    return xs, ys
+    if "z_order" in feature:
+        ys = tuple((y+(feature_height*feature["z_order"]) for y in ys))
+    return xs, ys, xbox_min
 
 
 # %% ../nbs/API/02_glyphs.ipynb 9
@@ -80,7 +84,9 @@ def box_coordinates(feature,
     y_min = 0.05+offset
     y_max = 0.05+feature_height-offset
     ys = (y_min, y_max, y_max, y_min)
-    return xs, ys
+    if "z_order" in feature:
+        ys = tuple((y+(feature_height*feature["z_order"]) for y in ys))
+    return xs, ys, min(xs)
 
 # %% ../nbs/API/02_glyphs.ipynb 10
 class Glyph:
@@ -133,14 +139,14 @@ class Glyph:
         return r
 
 # %% ../nbs/API/02_glyphs.ipynb 11
-def get_default_glyphs() -> dict:
+def get_default_glyphs(arrow_colors=("purple","orange"), box_colors=("grey",)) -> dict:
     """Returns a dictionnary with:
 
             * keys: feature types (str)
             * values: a Glyph object
     """
-    basic_arrow=Glyph(glyph_type="arrow",colors=("purple","orange"),alpha=0.8,show_name=True)
-    basic_box=Glyph(glyph_type="box",colors=("grey",),alpha=1,height=0.8,show_name=False)
+    basic_arrow=Glyph(glyph_type="arrow",colors=arrow_colors,alpha=0.8,show_name=True)
+    basic_box=Glyph(glyph_type="box",colors=box_colors,alpha=1,height=0.8,show_name=False)
     
     default_glyphs=defaultdict(lambda: basic_arrow.copy()) #the default glyph will be the same as for CDS etc.
     default_glyphs.update(dict([(f,basic_arrow.copy()) for f in ["CDS", "ncRNA", "rRNA", "tRNA"]]))
@@ -151,19 +157,38 @@ def get_default_glyphs() -> dict:
 default_glyphs=get_default_glyphs()
 
 # %% ../nbs/API/02_glyphs.ipynb 13
-def get_patch_coordinates(feature, glyphs_dict, feature_height=0.15):
+def get_patch_coordinates(feature, glyphs_dict, feature_height=0.15, color_attribute=None):
     glyph=glyphs_dict[feature.type]
-    return glyph.get_patch(feature, feature_height=feature_height)
+    coordinate, color, alpha = glyph.get_patch(feature, feature_height=feature_height)
+    if color_attribute is not None:
+        color = feature.attributes.get(color_attribute, color) # get the color attribute, keep original color if not found.
+    return coordinate, color, alpha
 
 # %% ../nbs/API/02_glyphs.ipynb 15
-def get_tooltip(feature, attributes):
+def html_wordwrap(input_string: str, line_len=50):
+    parts = input_string.split()
+    out = list()
+    running_sum = 0
+    for part in parts:
+        if running_sum > line_len:
+            out.append("<br>")
+            running_sum = 0
+        out.append(part)
+        running_sum += len(part)
+
+        
+    return " ".join(out)
+    
+
+def get_tooltip(feature, attributes, wrap=50):
     
     def _format_attribute(name, value, color="DodgerBlue"):
-        return f'<span style="color:{color}">{html.escape(name)}</span><span>: {html.escape(value)}</span>'
+        return f'<span style="color:{color}">{html.escape(name)}</span><span>: {html_wordwrap(html.escape(value), wrap)}</span>'
     
     row_type = feature["type"]
     tooltips = list()
     tooltips.append(f'<span style="color:FireBrick">{feature["type"]}</span>')
+
     if row_type in attributes:
         if attributes[row_type] is not None:
             for attribute in attributes[row_type]:
@@ -186,12 +211,13 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
                         attributes: list = default_attributes, #list of attributes to display when hovering
                         name: str = default_attributes[0], #attribute to be displayed as the feature name
                         feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
+                        color_attribute: str =  None
                        )->pd.DataFrame:
     features=features.loc[(features["right"] > left) & (features["left"] < right)]
     
     if len(features)>0:
-        coordinates, colors, alphas = zip(*features.apply(get_patch_coordinates,glyphs_dict=glyphs_dict,feature_height=feature_height,axis=1))
-        xs, ys = zip(*coordinates)
+        coordinates, colors, alphas = zip(*features.apply(get_patch_coordinates,glyphs_dict=glyphs_dict,feature_height=feature_height,axis=1, color_attribute=color_attribute))
+        xs, ys, xbox_mins = zip(*coordinates)
     else:
         colors = []
         xs, ys = [], []
@@ -207,6 +233,7 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
     out=dict(names=names,
              xs=list(xs),
              ys=list(ys),
+             xbox_min=list(xbox_mins),
              color=list(colors),
              alpha=list(alphas),
              pos=list(features.middle.values),
