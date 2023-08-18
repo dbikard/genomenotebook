@@ -165,10 +165,10 @@ def get_patch_coordinates(feature, glyphs_dict, feature_height=0.15, color_attri
     return coordinate, color, alpha
 
 # %% ../nbs/API/02_glyphs.ipynb 15
-def html_wordwrap(input_string: str, line_len=50):
+def html_wordwrap(input_string: str, line_len=50, start=0):
     parts = input_string.split()
     out = list()
-    running_sum = 0
+    running_sum = start
     for part in parts:
         if running_sum > line_len:
             out.append("<br>")
@@ -183,7 +183,7 @@ def html_wordwrap(input_string: str, line_len=50):
 def get_tooltip(feature, attributes, wrap=50):
     
     def _format_attribute(name, value, color="DodgerBlue"):
-        return f'<span style="color:{color}">{html.escape(name)}</span><span>: {html_wordwrap(html.escape(value), wrap)}</span>'
+        return f'<span style="color:{color}">{html.escape(name)}</span><span>: {html_wordwrap(html.escape(value), wrap, len(name)+1)}</span>'
     
     row_type = feature["type"]
     tooltips = list()
