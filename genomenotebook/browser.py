@@ -44,6 +44,7 @@ from bokeh.models import (
     NumeralTickFormatter, 
     LabelSet,
     HoverTool,
+    TapTool,
     Quad
 )
 
@@ -59,8 +60,7 @@ import numpy as np
 import pandas as pd
 import warnings
 from typing import Union, List, Dict, Optional
-import collections
-
+from collections.abc import Mapping
 
 # %% ../nbs/API/00_browser.ipynb 6
 class GenomeBrowser:
@@ -134,7 +134,7 @@ class GenomeBrowser:
                 raise ValueError("If features_name supplied as dict, it must specify a feature name for all feature types")
             self.feature_name = feature_name
         # determine attributes for each feature_type
-        if isinstance(attributes,collections.Mapping):
+        if isinstance(attributes,Mapping):
             seen = 0
             for feature_type in feature_types:
                 if feature_type in attributes:
