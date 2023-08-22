@@ -115,7 +115,6 @@ def parse_gff(gff_path:str, # path to the gff file
               bounds: tuple=None, # (left limit, right limit)
               feature_types: list = None, # list of feature types to extract
              )->pd.DataFrame:
-    cwd = os.getcwd()
     
     with default_open_gz(gff_path) as gff_file:
         # Create an in-memory file buffer using the io.StringIO class
@@ -151,7 +150,7 @@ def parse_gff(gff_path:str, # path to the gff file
      
         return df
 
-# %% ../nbs/API/02_utils.ipynb 19
+# %% ../nbs/API/02_utils.ipynb 20
 def available_feature_types(gff_path):
     ftypes=set()
     with default_open_gz(gff_path) as handle:
@@ -162,19 +161,19 @@ def available_feature_types(gff_path):
                     ftypes.add(r[2])
     return ftypes
 
-# %% ../nbs/API/02_utils.ipynb 22
+# %% ../nbs/API/02_utils.ipynb 23
 def available_attributes(gff_path):
     features=parse_gff(gff_path)
     return features.columns
 
-# %% ../nbs/API/02_utils.ipynb 25
+# %% ../nbs/API/02_utils.ipynb 26
 from collections import defaultdict
 
-# %% ../nbs/API/02_utils.ipynb 28
+# %% ../nbs/API/02_utils.ipynb 29
 def in_wsl() -> bool:
     return 'microsoft-standard' in uname().release
 
-# %% ../nbs/API/02_utils.ipynb 30
+# %% ../nbs/API/02_utils.ipynb 31
 def add_extension(filename,extension="svg"):
     base_name, ext = os.path.splitext(filename)
     if ext.lower() != '.'+extension:
