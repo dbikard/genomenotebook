@@ -270,6 +270,7 @@ def _add_annotations(self:GenomeBrowser):
     feature_patches["label_y"] = feature_patches["ys"].map(min) + self.feature_height + self.label_vertical_offset
     if self.label_justify == "center":
         label_x = "pos"
+        feature_patches["label_x"] = feature_patches.pos
     elif self.label_justify == "left":
         feature_patches["label_x"] = feature_patches["xbox_min"]
         label_x = "label_x"
