@@ -161,3 +161,4 @@ checklink/cookies.txt
 # Quarto
 .quarto
 
+genomenotebook/_modidx.py
