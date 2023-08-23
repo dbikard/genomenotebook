@@ -122,17 +122,12 @@ class GenomeBrowser:
         self.label_horizontal_offset = label_horizontal_offset
         
         
-        # determine feature_name for each feature_type
-        if type(feature_name) is str:
-            self.feature_name = {feature_type:feature_name for feature_type in feature_types}
-        else: # make sure feature_name is defined for all feature_types
-            seen = 0
-            for feature_type in feature_types:
-                if feature_type in feature_name:
-                    seen += 1
-            if len(feature_types) > seen:
-                raise ValueError("If features_name supplied as dict, it must specify a feature name for all feature types")
-            self.feature_name = feature_name
+        for feature_type in feature_types:
+            if type(feature_name) is str:
+                self.glyphs[feature_type].name_attr = feature_name
+            else:
+                self.glyphs[feature_type].name_attr = feature_name[feature_type]
+
         # determine attributes for each feature_type
         if isinstance(attributes,Mapping):
             seen = 0
@@ -163,10 +158,6 @@ class GenomeBrowser:
             self._get_gene_track()
             
     def _prepare_data(self):
-#         if self.feature_name not in self.features.columns:
-#             self.features[self.feature_name]=""
-        self.features["name"] = self.features.apply(self._get_feature_name, axis=1)
-
         self.seq_id = self.features.seq_id[0]
         self._get_sequence()
 
@@ -177,7 +168,6 @@ class GenomeBrowser:
                                             self.bounds[1],
                                             glyphs_dict=self.glyphs,
                                             attributes=self.attributes,
-                                            name = self.feature_name,
                                             feature_height = self.feature_height,
                                             color_attribute = self.color_attribute
                                             )
@@ -245,15 +235,7 @@ class GenomeBrowser:
         elif self.init_pos>self.bounds[1] or self.init_pos<self.bounds[0]:
             warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos=sum(self.bounds)//2
-    
-    def _get_feature_name(self, row):
-        if row["type"] in self.feature_name:
-            if self.feature_name[row["type"]] in row["attributes"]:
-                return row["attributes"][self.feature_name[row["type"]]]
-            elif len(row["attributes"]) > 0:
-                return next(iter(row["attributes"].values()))
-        
-        return ""
+
 
 
 # %% ../nbs/API/00_browser.ipynb 12
