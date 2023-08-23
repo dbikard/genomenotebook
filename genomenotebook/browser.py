@@ -120,6 +120,7 @@ class GenomeBrowser:
         self.show_labels = show_labels
         self.label_vertical_offset = label_vertical_offset
         self.label_horizontal_offset = label_horizontal_offset
+        self.elements=[]
         
         
         for feature_type in feature_types:
@@ -247,7 +248,7 @@ def _add_annotations(self:GenomeBrowser):
             lambda x: max(x)>self.x_range.start-self.max_glyph_loading_range)) & (
         self.patches['xs'].apply(
             lambda x: min(x)<self.x_range.end+self.max_glyph_loading_range)
-        )]
+        )].copy()
     
     feature_patches["label_y"] = feature_patches["ys"].map(min) + self.feature_height + self.label_vertical_offset
     if self.label_justify == "center":
@@ -463,14 +464,14 @@ def _get_search_box(self:GenomeBrowser):
 # %% ../nbs/API/00_browser.ipynb 24
 @patch
 def collect_elements(self:GenomeBrowser):
+
+    self._get_browser_elements()
     elements = self.elements.copy()
-    if len(self.features)>0:
-        self._get_browser_elements() 
-        if self.search:
-            search_elements = [self._get_search_box()]
-            if self.show_seq:
-                 search_elements.append(self._get_sequence_search())
-            elements = [row(search_elements)]+elements
+    if self.search:
+        search_elements = [self._get_search_box()]
+        if self.show_seq:
+             search_elements.append(self._get_sequence_search())
+        elements = [row(search_elements)]+elements
 
     for track in self.tracks:
         elements.append(track.fig)
