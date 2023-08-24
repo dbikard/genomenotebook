@@ -352,7 +352,7 @@ def _set_js_callbacks(self:GenomeBrowser):
 # %% ../nbs/API/00_browser.ipynb 18
 @patch
 def _get_browser_elements(self:GenomeBrowser):
-        self._add_annotations()
+        self._add_annotations() 
         self._get_sequence_div()
         self._set_js_callbacks()
 

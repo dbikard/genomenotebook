@@ -206,18 +206,18 @@ def get_tooltip(feature, attributes, wrap=50):
     return "<br>".join(tooltips)
 
 # %% ../nbs/API/02_glyphs.ipynb 20
-def get_feature_name(row, glyphs_dict=default_glyphs):
+def get_feature_name(row, glyphs_dict):
     """ For each row of features DataFrame uses the Glyph object provided in the glyphs_dict to know which attribute to use as the name"""
-    if glyphs_dict[row["type"]].name_attr in row.attributes:
-        if glyphs_dict[row.type].show_name:
+    if glyphs_dict[row.type].show_name:
+        if glyphs_dict[row["type"]].name_attr in row.attributes:
             return row.attributes[glyphs_dict[row.type].name_attr]
-    elif len(row.attributes) > 0:
-            return next(iter(row.attributes.values()))
-    
+        elif len(row.attributes) > 0:
+                return next(iter(row.attributes.values()))
+        
     return ""
 
 
-# %% ../nbs/API/02_glyphs.ipynb 23
+# %% ../nbs/API/02_glyphs.ipynb 24
 def get_feature_patches(features: pd.DataFrame, #DataFrame of the features 
                         left: int, #left limit
                         right: int, #right limit
@@ -235,7 +235,7 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
         colors = []
         xs, ys = [], []
     
-    names=list(features.apply(get_feature_name,glyphs_dict=default_glyphs, axis=1)
+    names=list(features.apply(get_feature_name,glyphs_dict=glyphs_dict, axis=1)
                )
     
     tooltips=list(features.apply(lambda row: get_tooltip(row, attributes),
