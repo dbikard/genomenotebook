@@ -77,7 +77,7 @@ class GenomeBrowser:
                  show_seq: bool = True, #shows the sequence when zooming in
                  search: bool = True, #enables a search bar
                  attributes: Union[list,Dict[str,Optional[list]]] = ["gene", "locus_tag", "product"], #list of attribute names from the GFF attributes column to be extracted. If dict then keys are feature types and values are lists of attributes. If None, then all attributes will be used.
-                 feature_name: Union[str, dict] = "gene", #attribute to be displayed as the feature name. If str then use the same field for every feature type. If dict then keys are feature types and values are feature name attribute.
+                 feature_name: Union[str, dict] = "gene", #attribute to be displayed as the feature name. If str then use the same field for every feature type. If dict then keys are feature types and values are feature name attribute. feature_name is ignored if glyphs are provided.
                  feature_types: list = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"], # list of feature types to display
                  glyphs: dict = None, #dictionnary defining the type and color of glyphs to display for each feature type
                  height: int = 150, # height of the annotation track
@@ -85,7 +85,7 @@ class GenomeBrowser:
                  label_angle: int = 45, # angle of the feature names displayed on top of the features
                  label_font_size: str = "10pt", # font size fo the feature names
                  label_justify: str = "center", # center, left
-                 label_vertical_offset: int = 0.07,
+                 label_vertical_offset: float = 0.03,
                  label_horizontal_offset = -5,
                  show_labels = True,
                  feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
@@ -123,11 +123,12 @@ class GenomeBrowser:
         self.elements=[]
         
         
-        for feature_type in feature_types:
-            if type(feature_name) is str:
-                self.glyphs[feature_type].name_attr = feature_name
-            else:
-                self.glyphs[feature_type].name_attr = feature_name[feature_type]
+        if glyphs==None: #if glyphs are provided then feature_name is ignored
+            for feature_type in feature_types:
+                if type(feature_name) is str:
+                    self.glyphs[feature_type].name_attr = feature_name
+                else:
+                    self.glyphs[feature_type].name_attr = feature_name[feature_type]
 
         # determine attributes for each feature_type
         if isinstance(attributes,Mapping):
@@ -170,6 +171,8 @@ class GenomeBrowser:
                                             glyphs_dict=self.glyphs,
                                             attributes=self.attributes,
                                             feature_height = self.feature_height,
+                                            label_vertical_offset =self.label_vertical_offset,
+                                            label_justify=self.label_justify,
                                             color_attribute = self.color_attribute
                                             )
         
@@ -250,13 +253,6 @@ def _add_annotations(self:GenomeBrowser):
             lambda x: min(x)<self.x_range.end+self.max_glyph_loading_range)
         )].copy()
     
-    feature_patches["label_y"] = feature_patches["ys"].map(min) + self.feature_height + self.label_vertical_offset
-    if self.label_justify == "center":
-        label_x = "pos"
-        feature_patches["label_x"] = feature_patches.pos
-    elif self.label_justify == "left":
-        feature_patches["label_x"] = feature_patches["xbox_min"]
-        label_x = "label_x"
     self._glyph_source = ColumnDataSource(feature_patches.to_dict(orient="list"))
     
     #Information about the range currently plotted
@@ -269,7 +265,7 @@ def _add_annotations(self:GenomeBrowser):
     )
     # gene labels in the annotation track
     # This seems to be necessary to show the labels
-    self.gene_track.scatter(x="pos", y=0, size=0, source=self._glyph_source)
+    #self.gene_track.scatter(x="label_x", y=0, size=0, source=self._glyph_source)
     
     #ys = list()
     

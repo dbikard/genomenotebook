@@ -224,6 +224,8 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
                         glyphs_dict: dict, #a dictionary of glyphs to use for each feature type
                         attributes: dict = default_attributes, #dictionary with feature type as keys and a list of attributes to display when hovering as values
                         feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
+                        label_vertical_offset: float = 0.05,
+                        label_justify: str = "center",
                         color_attribute: str =  None
                        )->pd.DataFrame:
     features=features.loc[(features["right"] > left) & (features["left"] < right)]
@@ -241,8 +243,8 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
     tooltips=list(features.apply(lambda row: get_tooltip(row, attributes),
                              axis=1)
                  )
-    
-    out=dict(names=names,
+
+    feature_patches=dict(names=names,
              xs=list(xs),
              ys=list(ys),
              xbox_min=list(xbox_mins),
@@ -252,4 +254,12 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
              attributes=tooltips
             )
     
-    return pd.DataFrame(out)
+    feature_patches=pd.DataFrame(feature_patches)
+    
+    feature_patches["label_y"] = feature_patches["ys"].map(min) + feature_height + label_vertical_offset
+    if label_justify == "center":
+        feature_patches["label_x"] = feature_patches.pos
+    elif label_justify == "left":
+        feature_patches["label_x"] = feature_patches["xbox_min"]
+    
+    return feature_patches
