@@ -8,8 +8,12 @@ from fastcore.basics import *
 
 from genomenotebook.utils import (
     parse_gff,
+    parse_fasta,
+    parse_genbank,
+    add_z_order,
     in_wsl,
     add_extension,
+    EmptyDataFrame,
 )
 
 from genomenotebook.glyphs import (
@@ -61,6 +65,7 @@ import pandas as pd
 import warnings
 from typing import Union, List, Dict, Optional
 from collections.abc import Mapping
+from collections import defaultdict
 
 # %% ../nbs/API/00_browser.ipynb 6
 class GenomeBrowser:
@@ -69,12 +74,13 @@ class GenomeBrowser:
     def __init__(self,
                  gff_path: str = None, #path to the gff3 file of the annotations (also accepts gzip files)
                  genome_path: str = None, #path to the fasta file of the genome sequence
+                 gb_path: str = None, #path to a genbank file
                  seq_id: str = None, #id of the sequence to show for genomes with multiple contigs
                  init_pos: int = None, #initial position to display
                  init_win: int = 10000, #initial window size (max=20000)
                  bounds: tuple = None, #bounds can be specified. This helps preserve memory by not loading the whole genome if not needed.
                  max_interval: int = 100000, #maximum size of the field of view in bp
-                 show_seq: bool = True, #shows the sequence when zooming in
+                 show_seq: bool = True, #creates a html div that shows the sequence when zooming in
                  search: bool = True, #enables a search bar
                  attributes: Union[list,Dict[str,Optional[list]]] = ["gene", "locus_tag", "product"], #list of attribute names from the GFF attributes column to be extracted. If dict then keys are feature types and values are lists of attributes. If None, then all attributes will be used.
                  feature_name: Union[str, dict] = "gene", #attribute to be displayed as the feature name. If str then use the same field for every feature type. If dict then keys are feature types and values are feature name attribute. feature_name is ignored if glyphs are provided.
@@ -92,35 +98,36 @@ class GenomeBrowser:
                  output_backend: str ="webgl", #can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
                  features:pd.DataFrame = None, # DataFrame with columns: ["seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes"], where "attributes" is a dict of attributes.
                  color_attribute = None, # feature attribute to be used as patch color
+                 z_stack = False, #if true features that overlap will be stacked on top of each other
                  **kwargs, #additional keyword arguments are passed as is to bokeh.plotting.figure
                  ):
         
-        self.gff_path = gff_path
-        self.genome_path = genome_path
-        self.show_seq = show_seq if genome_path!=None else False
-        self.feature_types = feature_types
         
-        self.feature_height = feature_height
+        # Set attributes
+        vars = locals().copy() # Copy the local variables
+        del vars['self'] # Remove 'self' from the dictionary
+        for key, value in vars.items():
+            setattr(self, key, value)
+
+        # If attribtues is a list then creates the self.attribtues dictionnary with the same attributes list for each feature type
+        if isinstance(self.attributes,List):
+            self.attributes = {feature_type:self.attributes for feature_type in self.feature_types}
+
+        if gff_path is not None and gb_path is not None:
+            raise("Either gff_path or gb_path can be provided, not both at the same time")
+        elif gff_path:
+            self._get_gff_features()
+        elif gb_path:
+            self._get_genbank_features()
+            
+
+        ### Getting the sequence ###
+        self._get_sequence()
+
+        ### Aesthetics ###
         self.glyphs = get_default_glyphs() if glyphs==None else glyphs
-        self.output_backend=output_backend
-        self.label_angle=label_angle
-        self.label_font_size=label_font_size
-        self.height=height
-        self.bounds=bounds
-        self.max_interval=max_interval
-        self.search=search
-        self.init_pos=init_pos
-        self.init_win=init_win
-        self.frame_width = width
-        self.kwargs=kwargs
         self.max_glyph_loading_range = 20000
-        self.tracks=[]
-        self.color_attribute = color_attribute
-        self.label_justify = label_justify
-        self.show_labels = show_labels
-        self.label_vertical_offset = label_vertical_offset
-        self.label_horizontal_offset = label_horizontal_offset
-        self.elements=[]
+        self.kwargs=kwargs
         
         
         if glyphs==None: #if glyphs are provided then feature_name is ignored
@@ -128,43 +135,61 @@ class GenomeBrowser:
                 if type(feature_name) is str:
                     self.glyphs[feature_type].name_attr = feature_name
                 else:
-                    self.glyphs[feature_type].name_attr = feature_name[feature_type]
-
-        # determine attributes for each feature_type
-        if isinstance(attributes,Mapping):
-            seen = 0
-            for feature_type in feature_types:
-                if feature_type in attributes:
-                    seen += 1
-            if len(feature_types) > seen:
-                raise ValueError("If attributes supplied as dict, it must specify a feature name for all feature types")
-        else:
-            self.attributes = {feature_type:attributes for feature_type in feature_types}
+                    feature_name_dic=defaultdict(lambda: "gene")
+                    feature_name_dic.update(feature_name)
+                    self.glyphs[feature_type].name_attr = feature_name_dic[feature_type]
         
-        # check if gff or features df passed in.
-        if (self.gff_path is None and features is None) or \
-            (self.gff_path is not None and features is not None):
-            raise ValueError("Must specify either gff_path, or features, but not both")
-        
-        elif self.gff_path is not None:
-            self.features = parse_gff(gff_path,
-                                    seq_id=seq_id,
-                                    bounds=bounds,
-                                    feature_types=feature_types
-                                    )
-        else:
-             self.features = features   
+        self.tracks=[]
+        self.elements=[]
         
         if len(self.features)>0:
+            if z_stack:
+                add_z_order(self.features)
             self._prepare_data()
             self._get_gene_track()
-            
+    
+    def _get_gff_features(self):
+        #if seq_id is not provided parse_gff will take the first contig in the file
+        self.features = parse_gff(self.gff_path,
+                        seq_id=self.seq_id,
+                        bounds=self.bounds,
+                        feature_types=self.feature_types,
+                        attributes=self.attributes
+                        )
+        self.seq_id = self.seq_id if self.seq_id else self.features.loc[0,"seq_id"]
+
+    def _get_genbank_features(self):
+        self.features = parse_genbank(self.gb_path,
+                        seq_id=self.seq_id,
+                        bounds=self.bounds,
+                        feature_types=self.feature_types,
+                        attributes=self.attributes
+                        )
+
+        
+    def _get_sequence(self):
+        """Looks for the sequence matching the seq_id and set bounds.
+        """
+        self.rec = None #keeps the Biopython sequence record object from the fasta file
+        #if the sequence is provided then seq_len is the length of the reference sequence before bounds are applied
+        #else seq_len is the right of the last feature
+        if self.show_seq and self.genome_path != None:
+            try:
+                self.rec = parse_fasta(self.genome_path, self.seq_id)
+                self.seq_len = len(self.rec.seq) #length of the reference sequence before bounds are applied
+            except:
+                warnings.warn(f"genome file {genome_path} cannot be parsed as a fasta file")
+                self.show_seq = False #if a sequence is not provided or cannot be parsed then show_seq set to False
+                self.seq_len = self.features.right.max()
+        else:
+            self.show_seq = False #if a sequence is not provided or cannot be parsed then show_seq set to False
+            self.seq_len = self.features.right.max()
+
+        self.bounds = self.bounds if self.bounds != None else (0, self.seq_len)
+        if self.rec is not None:
+            self.rec.seq=self.rec.seq[self.bounds[0]:self.bounds[1]]
+  
     def _prepare_data(self):
-        self.seq_id = self.features.seq_id[0]
-        self._get_sequence()
-
-        if self.bounds == None: self.bounds=(0,self.seq_len)
-
         self.patches = get_feature_patches(self.features, 
                                             self.bounds[0], 
                                             self.bounds[1],
@@ -175,26 +200,7 @@ class GenomeBrowser:
                                             label_justify=self.label_justify,
                                             color_attribute = self.color_attribute
                                             )
-        
-    def _get_sequence(self):
-        """Looks for the sequence matching the seq_id, and applies the bounds to the sequence"""
-        if self.genome_path!=None: 
-            rec_found=False
-            for rec in SeqIO.parse(self.genome_path, 'fasta'):
-                if rec.id==self.seq_id:
-                    rec_found=True
-                    break
-
-            if not rec_found:
-                warnings.warn("seq_id not found in fasta file")
-            
-            self.rec=rec
-            self.seq_len = len(self.rec.seq) #length of the reference sequence before bounds are applied
-            if self.bounds:
-                self.rec.seq=self.rec.seq[self.bounds[0]:self.bounds[1]]    
-        else: 
-            self.seq_len = self.features.right.max()
-    
+                                            
     def _get_gene_track(self):
         self._set_init_pos()
         if self.init_win>self.max_interval:
@@ -230,7 +236,7 @@ class GenomeBrowser:
         # Hide axis
         self.gene_track.yaxis.visible = False
 
-        self.gene_track.frame_width=self.frame_width
+        self.gene_track.frame_width=self.width
         self.x_range=self.gene_track.x_range
     
     def _set_init_pos(self):
@@ -242,9 +248,13 @@ class GenomeBrowser:
 
 
 
-# %% ../nbs/API/00_browser.ipynb 12
+# %% ../nbs/API/00_browser.ipynb 14
 @patch
 def _add_annotations(self:GenomeBrowser):
+    """
+    Creates the Bokeh ColumnDataSource objects for the glyphs and add the glyphs and labels to the gene_track
+    """
+    
     #Filter initial glyphs by position
     feature_patches = self.patches.loc[(
         self.patches['xs'].apply(
@@ -291,7 +301,7 @@ def _add_annotations(self:GenomeBrowser):
         )
     )
 
-# %% ../nbs/API/00_browser.ipynb 14
+# %% ../nbs/API/00_browser.ipynb 16
 @patch
 def _get_sequence_div(self:GenomeBrowser):
         ## Setting the div that will display the sequence
@@ -306,13 +316,13 @@ def _get_sequence_div(self:GenomeBrowser):
                 )
         
         self._div = Div(height=18, height_policy="fixed", 
-                        width=self.frame_width, 
-                        max_width=self.frame_width,
+                        width=self.width, 
+                        max_width=self.width,
                         width_policy="fixed",
                         styles = sty,
                         )
 
-# %% ../nbs/API/00_browser.ipynb 16
+# %% ../nbs/API/00_browser.ipynb 18
 @patch
 def _set_js_callbacks(self:GenomeBrowser):
         ## Adding the ability to display the sequence when zooming in
@@ -345,7 +355,7 @@ def _set_js_callbacks(self:GenomeBrowser):
 
         self.gene_track.x_range.js_on_change('start', self._xcb, self._glyph_update_callback)
 
-# %% ../nbs/API/00_browser.ipynb 18
+# %% ../nbs/API/00_browser.ipynb 20
 @patch
 def _get_browser_elements(self:GenomeBrowser):
         self._add_annotations() 
@@ -357,7 +367,7 @@ def _get_browser_elements(self:GenomeBrowser):
         else:
             self.elements = [self.gene_track]
 
-# %% ../nbs/API/00_browser.ipynb 20
+# %% ../nbs/API/00_browser.ipynb 22
 @patch
 def _get_sequence_search(self:GenomeBrowser):
         seq_input = TextInput(placeholder="search by sequence")
@@ -426,7 +436,7 @@ def _get_sequence_search(self:GenomeBrowser):
 
         return row(seq_input, previousButton, nextButton)
 
-# %% ../nbs/API/00_browser.ipynb 22
+# %% ../nbs/API/00_browser.ipynb 24
 @patch
 def _get_search_box(self:GenomeBrowser):
         ## Create a text input widget for search
@@ -457,9 +467,9 @@ def _get_search_box(self:GenomeBrowser):
     
     
 
-# %% ../nbs/API/00_browser.ipynb 24
+# %% ../nbs/API/00_browser.ipynb 26
 @patch
-def collect_elements(self:GenomeBrowser):
+def _collect_elements(self:GenomeBrowser):
 
     self._get_browser_elements()
     elements = self.elements.copy()
@@ -473,25 +483,25 @@ def collect_elements(self:GenomeBrowser):
         elements.append(track.fig)
     return elements
 
-# %% ../nbs/API/00_browser.ipynb 25
+# %% ../nbs/API/00_browser.ipynb 27
 @patch
 def show(self:GenomeBrowser):
     #bk_output_file("", "")
-    elements = self.collect_elements()
+    elements = self._collect_elements()
 
     bk_show(column(elements))
 
-# %% ../nbs/API/00_browser.ipynb 26
+# %% ../nbs/API/00_browser.ipynb 28
 @patch
 def save_html(self:GenomeBrowser, path:str, title:str=""):
     bk_output_file(path, title)
     elements = self.collect_elements()
     bk_save(column(elements), filename=path, title=title)
 
-# %% ../nbs/API/00_browser.ipynb 43
+# %% ../nbs/API/00_browser.ipynb 46
 from .track import Track
 
-# %% ../nbs/API/00_browser.ipynb 44
+# %% ../nbs/API/00_browser.ipynb 47
 @patch
 def add_track(self: GenomeBrowser,
              height: int = 200, #size of the track
@@ -504,7 +514,7 @@ def add_track(self: GenomeBrowser,
               tools=tools,
               **kwargs)
     t.fig.x_range = self.x_range
-    t.fig.frame_width = self.frame_width
+    t.fig.frame_width = self.width
     t.bounds = self.bounds
     t.loaded_range = ColumnDataSource({"start":[self.x_range.start-self.max_glyph_loading_range],
                                         "end":[self.x_range.end+self.max_glyph_loading_range], 
@@ -514,7 +524,7 @@ def add_track(self: GenomeBrowser,
     return t
     
 
-# %% ../nbs/API/00_browser.ipynb 46
+# %% ../nbs/API/00_browser.ipynb 49
 @patch
 def highlight(self:GenomeBrowser,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -554,7 +564,7 @@ def highlight(self:GenomeBrowser,
         for t in self.tracks:
             t.highlight(data=data,left=left,right=right,color=color,alpha=alpha,hover_data=hover_data,**kwargs)
 
-# %% ../nbs/API/00_browser.ipynb 50
+# %% ../nbs/API/00_browser.ipynb 53
 from bokeh.io import export_svgs, export_svg, export_png
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
@@ -562,7 +572,7 @@ from selenium.webdriver.chrome.options import Options
 import os
 from svgutils import compose
 
-# %% ../nbs/API/00_browser.ipynb 51
+# %% ../nbs/API/00_browser.ipynb 54
 @patch
 def save(self:GenomeBrowser, 
          fname: str, #path to file or a simple name (extensions are automatically added)
@@ -609,7 +619,7 @@ def save(self:GenomeBrowser,
                         )
                         offset+=t.height
                         
-                    compose.Figure(self.frame_width+50, # +50 accounts for axis and labels
+                    compose.Figure(self.width+50, # +50 accounts for axis and labels
                                    total_height, 
                                    *svgelements).save(f"{base_name}_composite.svg")
 
