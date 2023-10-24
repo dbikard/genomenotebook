@@ -4,8 +4,8 @@
 __all__ = ['strand_dict', 'download_file', 'is_gzipped_file', 'default_open_gz', 'extract_attribute', 'extract_all_attributes',
            'extract_attributes', 'get_attributes', 'attributes_to_columns', 'set_positions', 'EmptyDataFrame',
            'parse_gff', 'available_feature_types', 'available_attributes', 'parse_fasta', 'regions_overlap',
-           'add_z_order', 'get_cds_unique_name', 'get_cds_name', 'seqRecord_to_df', 'parse_genbank', 'in_wsl',
-           'add_extension']
+           'add_z_order', 'get_cds_unique_name', 'get_cds_name', 'seqRecord_to_df', 'parse_genbank',
+           'inspect_feature_types', 'in_wsl', 'add_extension']
 
 # %% ../nbs/API/02_utils.ipynb 5
 import numpy as np
@@ -23,7 +23,7 @@ from platform import uname
 from Bio import SeqIO
 
 from typing import List, Optional, Dict
-
+from IPython.display import display, HTML
 
 # %% ../nbs/API/02_utils.ipynb 6
 def download_file(url, save_path):
@@ -145,7 +145,7 @@ def set_positions(annotation: pd.DataFrame, # an annotation DataFrame extracted 
 class EmptyDataFrame(Exception):
     pass
 
-
+# %% ../nbs/API/02_utils.ipynb 20
 def parse_gff(gff_path:str, # path to the gff file
               seq_id: Optional[str] = None, # sequence id (first column of the gff)
               bounds: Optional[tuple] = None, # (left limit, right limit)
@@ -192,7 +192,7 @@ def parse_gff(gff_path:str, # path to the gff file
      
         return df
 
-# %% ../nbs/API/02_utils.ipynb 28
+# %% ../nbs/API/02_utils.ipynb 29
 def available_feature_types(gff_path):
     ftypes=set()
     with default_open_gz(gff_path) as handle:
@@ -203,12 +203,12 @@ def available_feature_types(gff_path):
                     ftypes.add(r[2])
     return ftypes
 
-# %% ../nbs/API/02_utils.ipynb 30
+# %% ../nbs/API/02_utils.ipynb 31
 def available_attributes(gff_path):
     features=parse_gff(gff_path)
     return features.columns
 
-# %% ../nbs/API/02_utils.ipynb 32
+# %% ../nbs/API/02_utils.ipynb 33
 def parse_fasta(genome_path, seq_id):
     """Retrieves the Biopython SeqRecord object that matches the seq_id in a fasta file"""
 
@@ -224,7 +224,7 @@ def parse_fasta(genome_path, seq_id):
     
     return rec
 
-# %% ../nbs/API/02_utils.ipynb 34
+# %% ../nbs/API/02_utils.ipynb 35
 def regions_overlap(region1, region2, min_overlap_fraction=0.0):
     """
         regions are tuples of start and stop coordinates
@@ -277,10 +277,10 @@ def regions_overlap(region1, region2, min_overlap_fraction=0.0):
     return False
     
 
-# %% ../nbs/API/02_utils.ipynb 36
+# %% ../nbs/API/02_utils.ipynb 37
 from collections import defaultdict
 
-# %% ../nbs/API/02_utils.ipynb 37
+# %% ../nbs/API/02_utils.ipynb 38
 def add_z_order(features, 
                 prescedence = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"]):
     """
@@ -317,7 +317,7 @@ def add_z_order(features,
 
     features.sort_values(by="start", inplace=True)
 
-# %% ../nbs/API/02_utils.ipynb 39
+# %% ../nbs/API/02_utils.ipynb 40
 #### Code from Domainator
 def get_cds_unique_name(feature):
     """
@@ -339,10 +339,10 @@ def get_cds_name(feature): #(contig_id, feature):
         return get_cds_unique_name(feature)
 #### End code from Domainator
 
-# %% ../nbs/API/02_utils.ipynb 40
+# %% ../nbs/API/02_utils.ipynb 41
 from Bio import SeqRecord
 
-# %% ../nbs/API/02_utils.ipynb 41
+# %% ../nbs/API/02_utils.ipynb 42
 strand_dict = {1: "+", -1: "-"}
 
 def seqRecord_to_df(rec: SeqRecord,
@@ -355,12 +355,12 @@ def seqRecord_to_df(rec: SeqRecord,
         if feature_types is None or feature.type in feature_types:
             attrs=attributes.get(feature.type, None)
             for part in feature.location.parts:
-                attributes_list = [("ID", get_cds_name(feature)),]
+                attributes_list = []#[("ID", get_cds_name(feature)),]
                 for key, value in feature.qualifiers.items():
                     if key == "translation":
                         continue
-                    if key == "ID":
-                        continue
+                    #if key == "ID":
+                    #    continue
                     if (attrs==None) or (key in attrs):
                         if len(value) == 1:
                             attributes_list.append((key, value[0]))
@@ -373,7 +373,7 @@ def seqRecord_to_df(rec: SeqRecord,
     df=pd.DataFrame(feature_lists, columns=["seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes"])
     return df
 
-# %% ../nbs/API/02_utils.ipynb 44
+# %% ../nbs/API/02_utils.ipynb 45
 def parse_genbank(gb_path,
                   seq_id: Optional[str] = None, # sequence id (first column of the gff) or "all"
                   bounds: Optional[tuple] = None, # (left limit, right limit)
@@ -407,11 +407,35 @@ def parse_genbank(gb_path,
     
     raise EmptyDataFrame("The annotation DataFrame is empty. Check that the feature_types and seq_id are correct, and that bounds (if specified) fall within the size of your genome.")
 
-# %% ../nbs/API/02_utils.ipynb 50
+# %% ../nbs/API/02_utils.ipynb 48
+def inspect_feature_types(file_path: str, 
+                          frmt: str #gff or genbank
+                          ):
+    """Outputs a table that recapitulates the feature types and attributes available in the file."""
+    
+    if frmt == "genbank":
+        df=parse_genbank(file_path)
+    elif frmt == "gff":
+        df=parse_gff(file_path)
+
+    table_data=[]
+    for t in set(df.type):
+        row=[t]
+        attributes = df.loc[df.type==t, "attributes"].iloc[0]
+        for attr in attributes:
+            row.append(attr)
+            table_data.append(row)
+            row=[""]
+
+
+    df_output = pd.DataFrame(table_data, columns=["feature_type", "attributes"])
+    display(HTML(df_output.to_html(index=False)))
+
+# %% ../nbs/API/02_utils.ipynb 53
 def in_wsl() -> bool:
     return 'microsoft-standard' in uname().release
 
-# %% ../nbs/API/02_utils.ipynb 52
+# %% ../nbs/API/02_utils.ipynb 55
 def add_extension(filename,extension="svg"):
     base_name, ext = os.path.splitext(filename)
     if ext.lower() != '.'+extension:

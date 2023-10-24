@@ -5,7 +5,7 @@ website:
       - 00_Examples.ipynb
       - 01_Options.ipynb
       - 02_Exporting plots.ipynb
-      - 03_Sandbox.ipynb
+      - 03_Stacking.ipynb
       - section: API
         contents:
           - API/00_browser.ipynb
