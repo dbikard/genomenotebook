@@ -9,7 +9,8 @@ from .utils import (parse_gff,
 from .glyphs import (get_default_glyphs, 
                     get_feature_patches, 
                     Glyph, 
-                    default_attributes
+                    default_attributes,
+                    tooltip_add_data
                     )
 from bokeh.io import output_notebook
 

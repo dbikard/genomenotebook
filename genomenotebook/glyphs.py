@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['default_types', 'default_attributes', 'Y_RANGE', 'default_glyphs', 'get_y_range', 'arrow_coordinates',
            'box_coordinates', 'Glyph', 'get_default_glyphs', 'get_patch_coordinates', 'html_wordwrap', 'get_tooltip',
-           'get_feature_name', 'get_feature_patches']
+           'get_feature_name', 'get_feature_patches', 'tooltip_add_data']
 
 # %% ../nbs/API/02_glyphs.ipynb 5
 import numpy as np
@@ -186,11 +186,12 @@ def html_wordwrap(input_string: str, line_len=50, start=0):
     
 
 # %% ../nbs/API/02_glyphs.ipynb 18
-def get_tooltip(feature, attributes, wrap=50):
-    
-    def _format_attribute(name, value, color="DodgerBlue"):
-        return f'<span style="color:{color}">{html.escape(name)}</span><span>: {html_wordwrap(html.escape(value), wrap, len(name)+1)}</span>'
-    
+def _format_attribute(name, value, color="DodgerBlue", wrap=50):
+        return f'<span style="color:{color}">{html.escape(name)}</span><span>: {html_wordwrap(html.escape(str(value)), wrap, len(name)+1)}</span>'
+
+
+# %% ../nbs/API/02_glyphs.ipynb 19
+def get_tooltip(feature, attributes, wrap=50):    
     row_type = feature["type"]
     tooltips = list()
     tooltips.append(f'<span style="color:FireBrick">{feature["type"]}</span>')
@@ -199,13 +200,13 @@ def get_tooltip(feature, attributes, wrap=50):
         if attributes[row_type] is not None:
             for attribute in attributes[row_type]:
                 if attribute in feature["attributes"]:
-                    tooltips.append(_format_attribute(attribute, feature['attributes'][attribute]))
+                    tooltips.append(_format_attribute(attribute, feature['attributes'][attribute],wrap=wrap))
         else: # append all
             for attribute in feature["attributes"]:
-                tooltips.append(_format_attribute(attribute, feature['attributes'][attribute]))
+                tooltips.append(_format_attribute(attribute, feature['attributes'][attribute],wrap=wrap))
     return "<br>".join(tooltips)
 
-# %% ../nbs/API/02_glyphs.ipynb 20
+# %% ../nbs/API/02_glyphs.ipynb 22
 def get_feature_name(row, glyphs_dict):
     """ For each row of features DataFrame uses the Glyph object provided in the glyphs_dict to know which attribute to use as the name"""
     if glyphs_dict[row.type].show_name:
@@ -217,7 +218,7 @@ def get_feature_name(row, glyphs_dict):
     return ""
 
 
-# %% ../nbs/API/02_glyphs.ipynb 24
+# %% ../nbs/API/02_glyphs.ipynb 26
 def get_feature_patches(features: pd.DataFrame, #DataFrame of the features 
                         left: int, #left limit
                         right: int, #right limit
@@ -231,7 +232,11 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
     features=features.loc[(features["right"] > left) & (features["left"] < right)]
 
     if len(features)>0:
-        coordinates, colors, alphas = zip(*features.apply(get_patch_coordinates,glyphs_dict=glyphs_dict,feature_height=feature_height,axis=1, color_attribute=color_attribute))
+        coordinates, colors, alphas = zip(*features.apply(get_patch_coordinates,
+                                                          glyphs_dict=glyphs_dict,
+                                                          feature_height=feature_height,
+                                                          axis=1, 
+                                                          color_attribute=color_attribute))
         xs, ys, xbox_mins = zip(*coordinates)
     else:
         colors = []
@@ -263,3 +268,10 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
         feature_patches["label_x"] = feature_patches["xbox_min"]
     
     return feature_patches
+
+# %% ../nbs/API/02_glyphs.ipynb 28
+def tooltip_add_data(patches, name, values):
+    assert(len(patches)==len(values))
+    for i,p in patches.iterrows():
+        patches.loc[i,"attributes"] += "<br>"+_format_attribute(name,values[i])
+    return patches
