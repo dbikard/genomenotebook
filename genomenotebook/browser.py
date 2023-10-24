@@ -19,6 +19,7 @@ from genomenotebook.utils import (
 from genomenotebook.glyphs import (
     get_feature_patches, 
     get_default_glyphs,
+    _format_attribute
 )
 
 from genomenotebook.javascript import (
@@ -629,3 +630,17 @@ def save(self:GenomeBrowser,
 
                 fname=add_extension(fname,extension="png")
                 export_png(layout, filename=fname, webdriver=browser)
+
+# %% ../nbs/API/00_browser.ipynb 62
+@patch
+def add_tooltip_data(self:GenomeBrowser,
+                    name: str, #name of the data to be added
+                    values: str, #values 
+                    feature_type: str = None, #specify the feature type if the data applies only a to specific feature_type  
+                    ):
+
+    flt=(self.patches.type == feature_type) | (feature_type is None)
+    assert(len(self.patches.loc[flt])==len(values))
+    for i,p in self.patches.loc[flt].iterrows():
+        self.patches.loc[i,"attributes"] += "<br>"+_format_attribute(name,values[i])
+

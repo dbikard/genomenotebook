@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['default_types', 'default_attributes', 'Y_RANGE', 'default_glyphs', 'get_y_range', 'arrow_coordinates',
            'box_coordinates', 'Glyph', 'get_default_glyphs', 'get_patch_coordinates', 'html_wordwrap', 'get_tooltip',
-           'get_feature_name', 'get_feature_patches', 'tooltip_add_data']
+           'get_feature_name', 'get_feature_patches']
 
 # %% ../nbs/API/02_glyphs.ipynb 5
 import numpy as np
@@ -256,7 +256,8 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
              color=list(colors),
              alpha=list(alphas),
              pos=list(features.middle.values),
-             attributes=tooltips
+             attributes=tooltips,
+             type=features.type
             )
     
     feature_patches=pd.DataFrame(feature_patches)
@@ -268,10 +269,3 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
         feature_patches["label_x"] = feature_patches["xbox_min"]
     
     return feature_patches
-
-# %% ../nbs/API/02_glyphs.ipynb 28
-def tooltip_add_data(patches, name, values):
-    assert(len(patches)==len(values))
-    for i,p in patches.iterrows():
-        patches.loc[i,"attributes"] += "<br>"+_format_attribute(name,values[i])
-    return patches
