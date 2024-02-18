@@ -76,16 +76,16 @@ class GenomeBrowser:
                  gff_path: str = None, #path to the gff3 file of the annotations (also accepts gzip files)
                  genome_path: str = None, #path to the fasta file of the genome sequence
                  gb_path: str = None, #path to a genbank file
-                 seq_id: str = None, #id of the sequence to show for genomes with multiple contigs
+                 seq_id: str = None, #id of the sequence to load, for genomes with multiple contigs, defaults to the first sequence in the genbank or gff file.
                  init_pos: int = None, #initial position to display
                  init_win: int = 10000, #initial window size (max=20000)
                  bounds: tuple = None, #bounds can be specified. This helps preserve memory by not loading the whole genome if not needed.
                  max_interval: int = 100000, #maximum size of the field of view in bp
                  show_seq: bool = True, #creates a html div that shows the sequence when zooming in
                  search: bool = True, #enables a search bar
-                 attributes: Union[list,Dict[str,Optional[list]]] = ["gene", "locus_tag", "product"], #list of attribute names from the GFF attributes column to be extracted. If dict then keys are feature types and values are lists of attributes. If None, then all attributes will be used.
+                 attributes: Union[list,Dict[str,Optional[list]]] = None , #list of attribute names from the GFF attributes column to be extracted. If dict then keys are feature types and values are lists of attributes. If None, then all attributes will be used.
                  feature_name: Union[str, dict] = "gene", #attribute to be displayed as the feature name. If str then use the same field for every feature type. If dict then keys are feature types and values are feature name attribute. feature_name is ignored if glyphs are provided.
-                 feature_types: list = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"], # list of feature types to display
+                 feature_types: list = None, # list of feature types to display
                  glyphs: dict = None, #dictionnary defining the type and color of glyphs to display for each feature type
                  height: int = 150, # height of the annotation track
                  width: int = 600, # width of the inner frame of the browser
@@ -104,35 +104,53 @@ class GenomeBrowser:
                  ):
         
         
-        # Set attributes
-        vars = locals().copy() # Copy the local variables
-        del vars['self'] # Remove 'self' from the dictionary
-        for key, value in vars.items():
-            setattr(self, key, value)
+        ### Set attributes based on passed in values ###
+        self.gff_path = gff_path
+        self.genome_path = genome_path
+        self.gb_path = gb_path
+        self.seq_id = seq_id
+        self.init_pos = init_pos
+        self.init_win = init_win
+        self.bounds = bounds
+        self.max_interval = max_interval
+        self.show_seq = show_seq
+        self.search = search
+        self.attributes = attributes
+        self.feature_name = feature_name
+        self.feature_types = feature_types
+        self.glyphs = glyphs
+        self.height = height
+        self.width = width
+        self.label_angle = label_angle
+        self.label_font_size = label_font_size
+        self.label_justify = label_justify
+        self.label_vertical_offset = label_vertical_offset
+        self.label_horizontal_offset = label_horizontal_offset
+        self.show_labels = show_labels
+        self.feature_height = feature_height
+        self.output_backend = output_backend
+        self.features = features
+        self.color_attribute = color_attribute
+        self.z_stack = z_stack
+        self.kwargs=kwargs
 
-        # If attribtues is a list then creates the self.attribtues dictionnary with the same attributes list for each feature type
+        ### assign defaults ###
+        self.rec = None # keeps the Biopython sequence object
+        if feature_types is None:
+            self.feature_types = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"]
+
+        if attributes is None:
+            self.attributes = ["gene", "locus_tag", "product"]
+        # If attribtues is a list then creates the self.attribtues dictionary with the same attributes list for each feature type
         if isinstance(self.attributes,List):
             self.attributes = {feature_type:self.attributes for feature_type in self.feature_types}
 
-        if gff_path is not None and gb_path is not None:
-            raise("Either gff_path or gb_path can be provided, not both at the same time")
-        elif gff_path:
-            self._get_gff_features()
-        elif gb_path:
-            self._get_genbank_features()
-            
-
-        ### Getting the sequence ###
-        self._get_sequence()
-
-        ### Aesthetics ###
+        # Aesthetics
         self.glyphs = get_default_glyphs() if glyphs==None else glyphs
         self.max_glyph_loading_range = 20000
-        self.kwargs=kwargs
-        
         
         if glyphs==None: #if glyphs are provided then feature_name is ignored
-            for feature_type in feature_types:
+            for feature_type in self.feature_types:
                 if type(feature_name) is str:
                     self.glyphs[feature_type].name_attr = feature_name
                 else:
@@ -140,6 +158,32 @@ class GenomeBrowser:
                     feature_name_dic.update(feature_name)
                     self.glyphs[feature_type].name_attr = feature_name_dic[feature_type]
         
+
+        ### Load sequence and sequence annotations ###
+        if sum(1 for x in [gff_path, gb_path, features] if x is not None) != 1:
+            raise ValueError("Exactly one of gff_path, gb_path, or features must be provided")
+        elif gff_path:
+            self._get_gff_features()
+        elif gb_path:
+            self._get_genbank_features()
+            
+
+        
+        if self.rec is None:
+            self.seq_len = self.features.right.max()
+        else:
+            self.seq_len = len(self.rec)
+        
+        self.bounds = self.bounds if self.bounds != None else (0, self.seq_len)
+        if self.rec is not None:
+            self.rec=self.rec[self.bounds[0]:self.bounds[1]]
+
+
+        
+        
+        
+
+        ### initialize visualization ###
         self.tracks=[]
         self.elements=[]
         
@@ -156,39 +200,39 @@ class GenomeBrowser:
                         bounds=self.bounds,
                         feature_types=self.feature_types,
                         attributes=self.attributes
-                        )
+                        )[0]
         self.seq_id = self.seq_id if self.seq_id else self.features.loc[0,"seq_id"]
+        self._get_sequence_from_fasta()
 
     def _get_genbank_features(self):
-        self.features = parse_genbank(self.gb_path,
+        self.seq, self.features = parse_genbank(self.gb_path,
                         seq_id=self.seq_id,
                         bounds=self.bounds,
                         feature_types=self.feature_types,
                         attributes=self.attributes
                         )
-
+        self.seq = self.seq[0]
+        self.features = self.features[0]
+        self.seq_id = self.seq_id if self.seq_id else self.features.loc[0,"seq_id"]
         
-    def _get_sequence(self):
+        
+
+    
+    def _get_sequence_from_fasta(self):
         """Looks for the sequence matching the seq_id and set bounds.
         """
-        self.rec = None #keeps the Biopython sequence record object from the fasta file
         #if the sequence is provided then seq_len is the length of the reference sequence before bounds are applied
         #else seq_len is the right of the last feature
-        if self.show_seq and self.genome_path != None:
+        if self.genome_path != None:
             try:
                 self.rec = parse_fasta(self.genome_path, self.seq_id)
-                self.seq_len = len(self.rec.seq) #length of the reference sequence before bounds are applied
             except:
                 warnings.warn(f"genome file {genome_path} cannot be parsed as a fasta file")
                 self.show_seq = False #if a sequence is not provided or cannot be parsed then show_seq set to False
-                self.seq_len = self.features.right.max()
         else:
             self.show_seq = False #if a sequence is not provided or cannot be parsed then show_seq set to False
-            self.seq_len = self.features.right.max()
 
-        self.bounds = self.bounds if self.bounds != None else (0, self.seq_len)
-        if self.rec is not None:
-            self.rec.seq=self.rec.seq[self.bounds[0]:self.bounds[1]]
+
   
     def _prepare_data(self):
         self.patches = get_feature_patches(self.features, 
@@ -246,7 +290,10 @@ class GenomeBrowser:
         elif self.init_pos>self.bounds[1] or self.init_pos<self.bounds[0]:
             warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos=sum(self.bounds)//2
-
+    
+    @classmethod
+    def load_genbank():
+        pass
 
 
 # %% ../nbs/API/00_browser.ipynb 14
@@ -328,7 +375,7 @@ def _get_sequence_div(self:GenomeBrowser):
 def _set_js_callbacks(self:GenomeBrowser):
         ## Adding the ability to display the sequence when zooming in
         self.sequence_dic = {
-            'seq': str(self.rec.seq).upper() if self.show_seq else "",
+            'seq': str(self.rec).upper() if self.show_seq else "",
             'bounds':self.bounds,
         }
 

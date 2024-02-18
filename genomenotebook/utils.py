@@ -21,8 +21,9 @@ import re
 from platform import uname
 
 from Bio import SeqIO
+from Bio.Seq import Seq
 
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 from IPython.display import display, HTML
 
 # %% ../nbs/API/02_utils.ipynb 6
@@ -147,36 +148,20 @@ class EmptyDataFrame(Exception):
 
 # %% ../nbs/API/02_utils.ipynb 20
 def parse_gff(gff_path:str, # path to the gff file
-              seq_id: Optional[str] = None, # sequence id (first column of the gff)
+              seq_id: Optional[str] = None, # sequence id (first column of the gff), if not None, then return only the annotations for the seq_id with this name
+              first: bool = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
               bounds: Optional[tuple] = None, # (left limit, right limit)
               feature_types: Optional[list] = None, # list of feature types to extract
-              attributes: Dict[str, List] = {}, # a dictionnary with feature types as keys and a list of attributes to extract as values 
-             )->pd.DataFrame:
-    """ Parses a GFF3 file and returns a Pandas DataFrame with the data for a specific contig. 
+              attributes: Dict[str, List] = None, # a dictionnary with feature types as keys and a list of attributes to extract as values 
+             )->List[pd.DataFrame]:
+    """ Parses a GFF3 file and returns a list of Pandas DataFrames with the data for a specific contig. 
     If seq_id is None then only the first contig is parsed.
     If feature_types is None then all feature types are extracted."""
-    
-    with default_open_gz(gff_path) as gff_file:
-        # Create an in-memory file buffer using the io.StringIO class
-        file_buffer = io.StringIO()
-        default_seq_id=None
-        buffer_empty=True
-        for line in gff_file:
-            if line[0]=="#":
-                continue
-            else:
-                r=line.split('\t')
-                if not seq_id and not default_seq_id:
-                    default_seq_id=r[0]
-                    seq_id=r[0]
-                if r[0]==seq_id:
-                    if feature_types==None or r[2] in feature_types:
-                        if bounds==None or (int(r[3])<bounds[1] and int(r[4])>bounds[0]):
-                            # Write each line to the file buffer
-                            file_buffer.write(line)
-                            buffer_empty=False
-                        
-                
+
+    if attributes is None:
+        attributes = {}
+
+    def _slurp_buffer(file_buffer, buffer_empty):
         # Reset the file pointer to the beginning of the file buffer
         file_buffer.seek(0)
         if buffer_empty:
@@ -189,8 +174,46 @@ def parse_gff(gff_path:str, # path to the gff file
             df["attributes"] = get_attributes(df, attributes)
             df.drop(columns=["attributes_str"], inplace=True)
             df=set_positions(df)
-     
         return df
+    
+    out = list()
+
+    #NOTE: This assumes that all lines for a given seq_id are consecutive, which is generally the case for gff files.
+    with default_open_gz(gff_path) as gff_file:
+        # Create an in-memory file buffer using the io.StringIO class
+        file_buffer = io.StringIO()
+        buffer_empty = True
+        last_seq_id = None
+        for line in gff_file:
+            if line[0]=="#":
+                continue
+            else:
+                r=line.split('\t')
+                current_line_seqid = r[0]
+                if last_seq_id is not None and current_line_seqid != last_seq_id: #seeing a new segment of the gff
+                    if not buffer_empty:
+                        if seq_id is None or seq_id == last_seq_id:
+                            out.append(_slurp_buffer(file_buffer, buffer_empty))
+                            file_buffer = io.StringIO()
+                            buffer_empty = True
+                            if first is not None or seq_id is not None:
+                                break
+                last_seq_id = current_line_seqid
+                if seq_id is None: #
+                    seq_id = current_line_seqid
+                if r[0]==seq_id:
+                    if feature_types==None or r[2] in feature_types:
+                        if bounds==None or (int(r[3])<bounds[1] and int(r[4])>bounds[0]):
+                            # Write each line to the file buffer
+                            file_buffer.write(line)
+                            buffer_empty=False
+        if not buffer_empty:
+            if seq_id is None or seq_id == last_seq_id:
+                out.append(_slurp_buffer(file_buffer, buffer_empty))
+    
+    if len(out) == 0:
+        raise EmptyDataFrame("The annotation DataFrame is empty. Check that the feature_types and seq_id are correct, and that bounds (if specified) fall within the size of your genome.")
+    return out
 
 # %% ../nbs/API/02_utils.ipynb 29
 def available_feature_types(gff_path):
@@ -205,7 +228,7 @@ def available_feature_types(gff_path):
 
 # %% ../nbs/API/02_utils.ipynb 31
 def available_attributes(gff_path):
-    features=parse_gff(gff_path)
+    features=parse_gff(gff_path)[0]
     return features.columns
 
 # %% ../nbs/API/02_utils.ipynb 33
@@ -222,7 +245,7 @@ def parse_fasta(genome_path, seq_id):
         warnings.warn("seq_id not found in fasta file")
         rec = None
     
-    return rec
+    return rec.seq
 
 # %% ../nbs/API/02_utils.ipynb 35
 def regions_overlap(region1, region2, min_overlap_fraction=0.0):
@@ -374,38 +397,34 @@ def seqRecord_to_df(rec: SeqRecord,
     return df
 
 # %% ../nbs/API/02_utils.ipynb 45
-def parse_genbank(gb_path,
-                  seq_id: Optional[str] = None, # sequence id (first column of the gff) or "all"
+def parse_genbank(gb_path, # path to the genbank file
+                  seq_id: Optional[str] = None, # sequence id (first column of the gff), if not None, then return only the annotations for the seq_id with this name
+                  first = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
                   bounds: Optional[tuple] = None, # (left limit, right limit)
                   feature_types: Optional[list] = None, # list of feature types to extract
                   attributes: Dict[str, List] = {}, # a dictionnary with feature types as keys and a list of attributes to extract as values 
-                  )->pd.DataFrame:
+                  )->Tuple[List[Seq], List[pd.DataFrame]]:
 
     recs=SeqIO.parse(gb_path, "genbank")
+    
     # read genbank file(s)
     feature_dfs = [] # list of dataframes, one for each seq record used if seq_id == "all"
-    names = []
+    seqs = [] # list of Seqs
     for rec in recs:
-        if not seq_id: #if seq_id is not provided keep only the first seq_id
-            seq_id=rec.id
-            
-        if rec.id == seq_id or seq_id =="all":
+        if seq_id == rec.id or seq_id is None:
             df = seqRecord_to_df(rec, feature_types=feature_types, attributes=attributes)
             if bounds is not None:
                 df=df.loc[(df.end>bounds[0]) & (df.start<bounds[1])]
             
             df=set_positions(df)
             feature_dfs.append(df)
+            seqs.append(rec.seq)
+            if first or seq_id is not None: # we only want one
+                break
 
-            if seq_id == "all":
-                continue
-            else: #rec.id == seq_id
-                return df
-
-    if seq_id =="all":
-        return feature_dfs
-    
-    raise EmptyDataFrame("The annotation DataFrame is empty. Check that the feature_types and seq_id are correct, and that bounds (if specified) fall within the size of your genome.")
+    if len(feature_dfs) == 0:
+        raise EmptyDataFrame("The annotation DataFrame is empty. Check that the feature_types and seq_id are correct, and that bounds (if specified) fall within the size of your genome.")
+    return seqs, feature_dfs
 
 # %% ../nbs/API/02_utils.ipynb 48
 def inspect_feature_types(file_path: str, 
@@ -414,18 +433,19 @@ def inspect_feature_types(file_path: str,
     """Outputs a table that recapitulates the feature types and attributes available in the file."""
     
     if frmt == "genbank":
-        df=parse_genbank(file_path)
+        _, dfs=parse_genbank(file_path)
     elif frmt == "gff":
-        df=parse_gff(file_path)
+        dfs=parse_gff(file_path)
 
     table_data=[]
-    for t in set(df.type):
-        row=[t]
-        attributes = df.loc[df.type==t, "attributes"].iloc[0]
-        for attr in attributes:
-            row.append(attr)
-            table_data.append(row)
-            row=[""]
+    for df in dfs:
+        for t in set(df.type):
+            row=[t]
+            attributes = df.loc[df.type==t, "attributes"].iloc[0]
+            for attr in attributes:
+                row.append(attr)
+                table_data.append(row)
+                row=[""]
 
 
     df_output = pd.DataFrame(table_data, columns=["feature_type", "attributes"])
