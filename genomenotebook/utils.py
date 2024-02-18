@@ -4,7 +4,7 @@
 __all__ = ['strand_dict', 'download_file', 'is_gzipped_file', 'default_open_gz', 'extract_attribute', 'extract_all_attributes',
            'extract_attributes', 'get_attributes', 'attributes_to_columns', 'set_positions', 'EmptyDataFrame',
            'parse_gff', 'available_feature_types', 'available_attributes', 'parse_fasta', 'regions_overlap',
-           'add_z_order', 'get_cds_unique_name', 'get_cds_name', 'seqRecord_to_df', 'parse_genbank',
+           'add_z_order', 'get_cds_unique_name', 'get_cds_name', 'seqRecord_to_df', 'parse_recs', 'parse_genbank',
            'inspect_feature_types', 'in_wsl', 'add_extension']
 
 # %% ../nbs/API/02_utils.ipynb 5
@@ -80,7 +80,7 @@ def extract_all_attributes(input_str:str)->OrderedDict: #TODO: why is this not l
 def extract_attributes(input_str:str, #the attribute string of a GFF fome
                        attributes: Optional[List[int]] = None #an optional list of attribute names to extract. If None all attributes are extracted.
                        )->OrderedDict: 
-    """Extracts all attributes from the GFF attributes column"""
+    """Extracts attributes from the GFF attributes column"""
     
     pattern = "(?P<key>\w+[-\w]*)=(?P<value>[^;]+)"
     match = re.findall(pattern, input_str)
@@ -92,7 +92,7 @@ def extract_attributes(input_str:str, #the attribute string of a GFF fome
 
 # %% ../nbs/API/02_utils.ipynb 15
 def get_attributes(df: pd.DataFrame, #a features DataFrame with at least a "type" column and an "attributes_str" column
-                   attributes: Dict[str, List] = {} # a dictionnary with feature types as keys and a list of attributes to extract as values 
+                   attributes: Dict[str, List] = {} # a dictionary with feature types as keys and a list of attributes to extract as values 
                    ) -> List:
     """Iterates over each row of the df and extracts the attributes specified in the attributes dictionnary for each feature type"""
     attr_list=[]
@@ -305,12 +305,13 @@ from collections import defaultdict
 
 # %% ../nbs/API/02_utils.ipynb 38
 def add_z_order(features, 
-                prescedence = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"]):
+                prescedence = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA","exon"]):
     """
         features is a dataframe of features
         prescedence is a list of feature types in order of prescedence, e.g. ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"] will put "CDS" features closer to the bottom of the plot than "repeat_region" features.
         returns features with a z_order column added
     """
+    #TODO: possibility for "linking attributes" to link features and cause them to have the same z-order and occupy their entire envelope.
     type_order = defaultdict(lambda: len(prescedence)+1)
     type_order.update({t: i for i, t in enumerate(prescedence)})
     features.sort_values(by="start", inplace=True)
@@ -397,16 +398,14 @@ def seqRecord_to_df(rec: SeqRecord,
     return df
 
 # %% ../nbs/API/02_utils.ipynb 45
-def parse_genbank(gb_path, # path to the genbank file
+def parse_recs(recs, # iterator over Bio.SeqRecord.SeqRecord
                   seq_id: Optional[str] = None, # sequence id (first column of the gff), if not None, then return only the annotations for the seq_id with this name
                   first = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
                   bounds: Optional[tuple] = None, # (left limit, right limit)
                   feature_types: Optional[list] = None, # list of feature types to extract
-                  attributes: Dict[str, List] = {}, # a dictionnary with feature types as keys and a list of attributes to extract as values 
+                  attributes: Dict[str, List] = {}, # a dictionary with feature types as keys and a list of attributes to extract as values 
                   )->Tuple[List[Seq], List[pd.DataFrame]]:
 
-    recs=SeqIO.parse(gb_path, "genbank")
-    
     # read genbank file(s)
     feature_dfs = [] # list of dataframes, one for each seq record used if seq_id == "all"
     seqs = [] # list of Seqs
@@ -426,7 +425,19 @@ def parse_genbank(gb_path, # path to the genbank file
         raise EmptyDataFrame("The annotation DataFrame is empty. Check that the feature_types and seq_id are correct, and that bounds (if specified) fall within the size of your genome.")
     return seqs, feature_dfs
 
-# %% ../nbs/API/02_utils.ipynb 48
+# %% ../nbs/API/02_utils.ipynb 46
+def parse_genbank(gb_path, # path to the genbank file
+                  seq_id: Optional[str] = None, # sequence id (first column of the gff), if not None, then return only the annotations for the seq_id with this name
+                  first = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
+                  bounds: Optional[tuple] = None, # (left limit, right limit)
+                  feature_types: Optional[list] = None, # list of feature types to extract
+                  attributes: Dict[str, List] = {}, # a dictionary with feature types as keys and a list of attributes to extract as values 
+                  )->Tuple[List[Seq], List[pd.DataFrame]]:
+
+    return parse_recs(SeqIO.parse(gb_path, "genbank"), seq_id, first, bounds, feature_types, attributes)
+
+
+# %% ../nbs/API/02_utils.ipynb 49
 def inspect_feature_types(file_path: str, 
                           frmt: str #gff or genbank
                           ):
@@ -451,11 +462,11 @@ def inspect_feature_types(file_path: str,
     df_output = pd.DataFrame(table_data, columns=["feature_type", "attributes"])
     display(HTML(df_output.to_html(index=False)))
 
-# %% ../nbs/API/02_utils.ipynb 53
+# %% ../nbs/API/02_utils.ipynb 54
 def in_wsl() -> bool:
     return 'microsoft-standard' in uname().release
 
-# %% ../nbs/API/02_utils.ipynb 55
+# %% ../nbs/API/02_utils.ipynb 56
 def add_extension(filename,extension="svg"):
     base_name, ext = os.path.splitext(filename)
     if ext.lower() != '.'+extension:

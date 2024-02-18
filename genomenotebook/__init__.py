@@ -1,7 +1,7 @@
 __version__ = "0.8.9"
 
 from .data import get_example_data_dir
-from .browser import GenomeBrowser
+from .browser import GenomeBrowser, GenomeStack
 from .utils import (parse_gff,
                     inspect_feature_types,
                     download_file
