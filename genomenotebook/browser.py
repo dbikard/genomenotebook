@@ -196,6 +196,7 @@ class GenomeBrowser:
             if z_stack:
                 add_z_order(self.features)
             self._prepare_data()
+        self.tracks = []
     
     def _get_gff_features(self):
         #if seq_id is not provided parse_gff will take the first contig in the file
@@ -262,16 +263,16 @@ class GenomeStack():
     def show(self):
         for browser in self.browsers:
             browser._get_browser_elements()
-        self.browsers[0].gene_track.xaxis.axis_label = self.browsers[0].seq_id
+        self.browsers[0].main_fig.xaxis.axis_label = self.browsers[0].seq_id
         if len(self.browsers) > 1:
-            self.browsers[0].gene_track.xaxis.major_tick_line_color = None
-            self.browsers[0].gene_track.xaxis.minor_tick_line_color = None
-            self.browsers[0].gene_track.xaxis.major_label_text_font_size  = '0pt'
+            self.browsers[0].main_fig.xaxis.major_tick_line_color = None
+            self.browsers[0].main_fig.xaxis.minor_tick_line_color = None
+            self.browsers[0].main_fig.xaxis.major_label_text_font_size  = '0pt'
     
         for i, browser in enumerate(self.browsers[1:]):
             i = i+1
             track = self.browsers[0].add_track()
-            track.fig = self.browsers[i].gene_track
+            track.fig = self.browsers[i].main_fig
             track.fig.axis.axis_label = self.browsers[i].seq_id
             track.fig.x_range = self.browsers[0].x_range
             if i < len(self.browsers)-1:
@@ -316,15 +317,38 @@ class GenomeStack():
 
 # %% ../nbs/API/00_browser.ipynb 8
 class GenomePlot():
-    def __init__(self, browser):
-        self.browser = browser
-        self.tracks=[]
+    def __init__(self, browsers:Union[GenomeBrowser,List[GenomeBrowser]]):
+        if type(browsers) is GenomeBrowser:
+            self.browser = browsers
+            self.child_browsers = []
+        else:
+            self.browser = browsers[0]
+            if len(browsers) > 1:
+                self.child_browsers = browsers[1:]
+
         self.elements=[]
         
-        self._get_gene_track()
+        self._get_main_fig()
         self.elements = self._collect_elements()
-    
-    def _get_gene_track(self):
+        for track in self.browser.tracks:
+            self._add_track(track)
+
+        for browser in self.child_browsers:
+            pass # TODO: merge in GenomeStack.show()
+
+    def _add_track(self, track):
+        
+        self.elements.append(
+            track.get_fig(
+                x_range=self.x_range, 
+                width=self.browser.width, 
+                bounds=self.browser.bounds,
+                max_glyph_loading_range=self.browser.max_glyph_loading_range,
+                output_backend=self.browser.output_backend
+            )
+        )
+        
+    def _get_main_fig(self):
         self._set_init_pos()
         if self.browser.init_win>self.browser.max_interval:
             warnings.warn("You requested an initial window larger than max_interval. Change max_interval to plot a larger window (this might overload your memory)")
@@ -339,7 +363,7 @@ class GenomePlot():
             min_interval=30
         )
 
-        self.gene_track = figure(
+        self.main_fig = figure(
             tools = "xwheel_zoom, xpan, save, reset",
             active_scroll = "xwheel_zoom",
             height = self.browser.height,
@@ -349,18 +373,19 @@ class GenomePlot():
             **self.browser.kwargs
         )
         # Add tool
-        self.gene_track.add_tools(BoxZoomTool(dimensions="width"))
+        self.main_fig.add_tools(BoxZoomTool(dimensions="width"))
 
         # Format x axis values
-        self.gene_track.xaxis[0].formatter = NumeralTickFormatter(format="0,0")
+        self.main_fig.xaxis[0].formatter = NumeralTickFormatter(format="0,0")
         # Hide grid
-        self.gene_track.xgrid.visible = False
-        self.gene_track.ygrid.visible = False
+        self.main_fig.xgrid.visible = False
+        self.main_fig.ygrid.visible = False
         # Hide axis
-        self.gene_track.yaxis.visible = False
+        self.main_fig.yaxis.visible = False
 
-        self.gene_track.frame_width=self.browser.width
-        self.x_range=self.gene_track.x_range
+        self.main_fig.frame_width=self.browser.width
+        
+        self.x_range
     
     def _set_init_pos(self):
         if self.browser.init_pos == None:
@@ -373,7 +398,7 @@ class GenomePlot():
 @patch
 def _add_annotations(self:GenomePlot):
     """
-    Creates the Bokeh ColumnDataSource objects for the glyphs and add the glyphs and labels to the gene_track
+    Creates the Bokeh ColumnDataSource objects for the glyphs and add the glyphs and labels to the main_fig
     """
     
     #Filter initial glyphs by position
@@ -391,12 +416,12 @@ def _add_annotations(self:GenomePlot):
                                             "end":[self.x_range.end+self.browser.max_glyph_loading_range], 
                                             "range":[self.browser.max_glyph_loading_range]})
     
-    glyph_renderer = self.gene_track.add_glyph(
+    glyph_renderer = self.main_fig.add_glyph(
         self._glyph_source, Patches(xs="xs", ys="ys", fill_color="color", fill_alpha="alpha")
     )
     # gene labels in the annotation track
     # This seems to be necessary to show the labels
-    #self.gene_track.scatter(x="label_x", y=0, size=0, source=self._glyph_source)
+    #self.main_fig.scatter(x="label_x", y=0, size=0, source=self._glyph_source)
     
     #ys = list()
     
@@ -414,8 +439,8 @@ def _add_annotations(self:GenomePlot):
             angle=self.browser.label_angle,
         )
 
-        self.gene_track.add_layout(labels)
-    self.gene_track.add_tools(
+        self.main_fig.add_layout(labels)
+    self.main_fig.add_tools(
         HoverTool(
             renderers=[glyph_renderer],
             tooltips="<div>@attributes</div>",
@@ -454,7 +479,7 @@ def _set_js_callbacks(self:GenomePlot):
 
         self._xcb = CustomJS(
             args={
-                "x_range": self.gene_track.x_range,
+                "x_range": self.main_fig.x_range,
                 "sequence": self.sequence_dic,
                 "all_glyphs":self.browser.patches.to_dict(orient="list"),
                 "glyph_source": self._glyph_source,
@@ -466,7 +491,7 @@ def _set_js_callbacks(self:GenomePlot):
         
         self._glyph_update_callback = CustomJS(
             args={
-                "x_range": self.gene_track.x_range,
+                "x_range": self.main_fig.x_range,
                 "all_glyphs":self.browser.patches.to_dict(orient="list"),
                 "glyph_source": self._glyph_source,
                 "loaded_range":self._loaded_range,
@@ -474,7 +499,7 @@ def _set_js_callbacks(self:GenomePlot):
             code=glyph_update_callback_code
         )
 
-        self.gene_track.x_range.js_on_change('start', self._xcb, self._glyph_update_callback)
+        self.main_fig.x_range.js_on_change('start', self._xcb, self._glyph_update_callback)
 
 # %% ../nbs/API/00_browser.ipynb 22
 @patch
@@ -484,9 +509,9 @@ def _get_browser_elements(self:GenomePlot):
         self._set_js_callbacks()
 
         if self.browser.show_seq:
-            self.elements = [self.gene_track,self._div]
+            self.elements = [self.main_fig,self._div]
         else:
-            self.elements = [self.gene_track]
+            self.elements = [self.main_fig]
 
 # %% ../nbs/API/00_browser.ipynb 24
 @patch
@@ -497,13 +522,13 @@ def _get_sequence_search(self:GenomePlot):
         search_span_source = ColumnDataSource({"x":[],"width":[],"fill_color":[]})#"y":[]
         h=Rect(x='x',y=0,
                width='width',
-               height=self.gene_track.height,
+               height=self.main_fig.height,
                fill_color='fill_color',
                line_color="fill_color",
                fill_alpha=0.2,
                line_alpha=0.4)
         
-        self.gene_track.add_glyph(search_span_source, h)
+        self.main_fig.add_glyph(search_span_source, h)
 
         call_back_sequence_search = CustomJS(
             args={
@@ -599,8 +624,6 @@ def _collect_elements(self:GenomePlot):
              search_elements.append(self._get_sequence_search())
         elements = [row(search_elements)]+elements
 
-    for track in self.tracks:
-        elements.append(track.fig)
     return elements
 
 # %% ../nbs/API/00_browser.ipynb 35
@@ -623,23 +646,15 @@ from .track import Track
 
 # %% ../nbs/API/00_browser.ipynb 55
 @patch
-def add_track(self: GenomePlot,
+def add_track(self: GenomeBrowser,
              height: int = 200, #size of the track
              tools: str = "xwheel_zoom, ywheel_zoom, pan, box_zoom, save, reset", #comma separated list of Bokeh tools that can be used to navigate the plot
              **kwargs,
              ) -> Track:
     """Adds a track to the GenomeBrowser. Ensures that the x_range are shared and figure widths are identical."""
     t = Track(height=height, 
-              output_backend=self.output_backend,
               tools=tools,
               **kwargs)
-    t.fig.x_range = self.x_range
-    t.fig.frame_width = self.width
-    t.bounds = self.bounds
-    t.loaded_range = ColumnDataSource({"start":[self.x_range.start-self.browser.max_glyph_loading_range],
-                                        "end":[self.x_range.end+self.browser.max_glyph_loading_range], 
-                                        "range":[self.browser.max_glyph_loading_range]})
-    t.max_glyph_loading_range = self.browser.max_glyph_loading_range
     self.tracks.append(t)
     return t
     
@@ -675,9 +690,9 @@ def highlight(self:GenomeBrowser,
            line_alpha=0,
            **kwargs)
 
-    renderer= self.gene_track.add_glyph(highlight_source, r)
+    renderer= self.main_fig.add_glyph(highlight_source, r)
     tooltips=[(f"{left} - {right}",f"@{left} - @{right}")]+[(f"{attr}",f"@{attr}") for attr in hover_data]
-    self.gene_track.add_tools(HoverTool(renderers=[renderer],
+    self.main_fig.add_tools(HoverTool(renderers=[renderer],
                                         tooltips=tooltips))
     
     if highlight_tracks:

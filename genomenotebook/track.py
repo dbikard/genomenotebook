@@ -29,6 +29,8 @@ except ImportError:
     
 import warnings
 
+from typing import List
+
 
 
 # %% ../nbs/API/01_track.ipynb 8
@@ -38,7 +40,6 @@ class Track:
                  ylim: tuple = None, #limits of the y axis. If not specified, ylim will be set automatically with the max and min of the data plotted with Track.line, Track.scatter or Track.bar
                  height: int = 200, #size of the track
                  tools: str = "xwheel_zoom, ywheel_zoom, pan, box_zoom, save, reset", #comma separated list of Bokeh tools that can be used to navigate the plot
-                 output_backend="webgl",
                  **kwargs,
                 ):        
         self.height = height
@@ -47,69 +48,93 @@ class Track:
         if "xwheel_zoom" not in [t.strip() for t in tools.split(',')]:
             tools+=", xwheel_zoom"
 
-        self.fig = figure(tools=tools,
+        self.tools = tools
+
+        self.data = None
+
+        self.ylim = ylim
+        self.bokeh_figure_args = kwargs
+        self.render_method = None
+
+        self.bokeh_args = kwargs
+
+    def get_fig(self, x_range, width, bounds, max_glyph_loading_range, output_backend):
+        fig = figure(tools=self.tools,
                           active_scroll="xwheel_zoom",
-                          height=height,
+                          height=self.height,
                           y_axis_location="right", #this is required in order to keep a proper alignment with the sequence
+                          x_range = x_range,
                           output_backend=output_backend,
-                          **kwargs)
-        self.fig.xaxis[0].formatter = NumeralTickFormatter(format="0,0")
-        self.track_loaded_data = None
-        self.track_all_data = None
-        self.loaded_range = None
-        self.set_ylim(ylim)
-            
-    def set_ylim(self, ylim):
-        self._ylim=ylim
-        if self._ylim != None:
-            self.fig.y_range=Range1d(ylim[0],ylim[1],
-                                    bounds=ylim)
+                          **self.bokeh_figure_args)
+        fig.frame_width = width
         
+        fig.xaxis[0].formatter = NumeralTickFormatter(format="0,0")
+        
+        if self.ylim != None:
+            fig.y_range=Range1d(self.ylim[0],self.ylim[1],
+                                    bounds=self.ylim)
         
 
+        loaded_range = ColumnDataSource({"start":[x_range.start-max_glyph_loading_range],
+                                        "end":[x_range.end+max_glyph_loading_range], 
+                                        "range":[max_glyph_loading_range]})
+
+
+
+        #self.track_loaded_data = None
+
+        self.render_method(self, fig, loaded_range)
+        return fig
 
 # %% ../nbs/API/01_track.ipynb 13
 @patch
-def _set_track_data_source(self:Track, data, pos, columns):
+def set_track_data_source(self:Track, 
+                          data:pd.DataFrame, # data to be plotted
+                          pos, 
+                          columns:List[str], # columns to store as data
+                         ):
     columns=[c for c in columns if c] #some arguments can be None => remove them
-    data=data.loc[(self.bounds[0] < data[pos]) & (data[pos] < self.bounds[1]),
-                  [pos]+columns].copy()
-    data=data.sort_values(pos)
+    self.columns = columns
     
+    data=data[[pos]+columns].sort_values(pos)
     
-    if len(data)>10**5:
-        warnings.warn("You are trying to plot more than 10^5 glyphs, this might overflow your memory. \
-        Consider using bounds or reducing the number of datapoints.")
+    self.data=data
 
-    y=columns[0]
-    if self._ylim == None:
+    y=columns[0] # TODO: columns[0] seems kind of arbitrary, this should probably be set in set_figure data? Or the functions for individual plot types
+    if self.ylim == None:
         ymin = data[y].values.min()
         ymax = data[y].values.max()
-        self._ylim = (ymin, ymax)
-        self.fig.y_range=Range1d(ymin,ymax,
-                                bounds=(ymin,ymax))
-    
-    self.all_data=ColumnDataSource(data)
-    self.loaded_data=ColumnDataSource(
-        data.loc[(self.loaded_range.data["start"][0] < data[pos]
+        self.ylim = (ymin, ymax) 
+
+
+@patch
+def set_figure_data_source(self:Track, fig, pos, loaded_range):
+    all_data = ColumnDataSource(self.data)
+    data_subset = self.data.loc[(loaded_range.data["start"][0] < self.data[pos]
                  ) & (
-                 data[pos] < self.loaded_range.data["end"][0])]
-    )
+                 self.data[pos] < loaded_range.data["end"][0])]
+    loaded_data = ColumnDataSource(data_subset)
+    if len(data_subset)>10**5:
+        warnings.warn("You are trying to plot more than 10^5 glyphs, this might overflow your memory. \
+        Consider using bounds or reducing the number of datapoints.")
     
     xcb = CustomJS(
-            args = {
-                "x_range": self.fig.x_range,
-                "pos": pos,
-                "all_data":self.all_data,
-                "loaded_data": self.loaded_data,
-                "track_loaded_range":self.loaded_range,
-            },
+        args = {
+            "x_range": fig.x_range,
+            "pos": pos,
+            "all_data":all_data,
+            "loaded_data": loaded_data,
+            "track_loaded_range":loaded_range,
+        },
             code = track_callback_code
-        )
-
-    self.fig.x_range.js_on_change('start', xcb)
-    tooltips=[(attr,f"@{attr}") for attr in set(columns)]
-    self.fig.add_tools(HoverTool(tooltips=tooltips))
+    )
+    fig.x_range.js_on_change('start', xcb)
+    ymin, ymax = self.ylim
+    fig.y_range=Range1d(ymin,ymax,
+            bounds=(ymin,ymax))
+    tooltips=[(attr,f"@{attr}") for attr in set(self.columns)]
+    fig.add_tools(HoverTool(tooltips=tooltips))
+    return loaded_data
 
 
 # %% ../nbs/API/01_track.ipynb 14
@@ -118,14 +143,20 @@ def line(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
-         hover_data: list = [], #list of column names to be shown when hovering over the data
+         hover_data:List = None, #list of column names to be shown when hovering over the data
          **kwargs #enables to pass keyword arguments used by the Bokeh function
         ):
+    if hover_data is None:
+        hover_data = []
     if type(hover_data)==str:
         hover_data = [hover_data]
-        
-    self._set_track_data_source(data, pos, columns=[y]+hover_data)
-    self.fig.line(source=self.loaded_data, x=pos, y=y, **kwargs)
+    def render_method(track, fig, loaded_range):
+        loaded_data = track.set_figure_data_source(fig, pos, loaded_range)
+        fig.line(source=loaded_data, x=pos, y=y, **kwargs)
+    
+    self.set_track_data_source(data, pos, columns=[y]+hover_data)
+
+    self.render_method = render_method
 
 
 # %% ../nbs/API/01_track.ipynb 18
@@ -138,23 +169,31 @@ def scatter(self:Track,
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
          factors: str = None, #name of a column of values to be used as factors
-         hover_data: list = [], #list of additional column names to be shown when hovering over the data
+         hover_data: List = None, #list of additional column names to be shown when hovering over the data
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
+    if hover_data is None:
+        hover_data = list()
     if type(hover_data)==str:
         hover_data = [hover_data]
-        
-    self._set_track_data_source(data, pos, columns=[y,factors]+hover_data)
+
+    def render_method(track, fig, loaded_range):
+        loaded_data = track.set_figure_data_source(fig, pos, loaded_range)
+        if factors!=None:
+            color=factor_cmap(factors,"Category10_10",tuple(set(data[factors].values)))
+            
+            fig.scatter(source=loaded_data, x=pos, y=y, color=color, legend_group=factors, **kwargs)
+            
+            fig.legend.title = factors
+            fig.legend.location = "top_left"
+        else:
+            fig.scatter(source=loaded_data, x=pos, y=y, **kwargs)
+
+            
+
+    self.set_track_data_source(data, pos=pos, columns=[y,factors]+hover_data)
+    self.render_method = render_method
     
-    if factors!=None:
-        color=factor_cmap(factors,"Category10_10",tuple(set(data[factors].values)))
-        
-        self.fig.scatter(source=self.loaded_data, x=pos, y=y, color=color, legend_group=factors, **kwargs)
-        
-        self.fig.legend.title = factors
-        self.fig.legend.location = "top_left"
-    else:
-        self.fig.scatter(source=self.loaded_data, x=pos, y=y, **kwargs)
 
 
 # %% ../nbs/API/01_track.ipynb 25
