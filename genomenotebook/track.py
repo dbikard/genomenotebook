@@ -54,7 +54,7 @@ class Track:
 
         self.ylim = ylim
         self.bokeh_figure_args = kwargs
-        self.render_method = None
+        self.render_methods = []
 
         self.bokeh_args = kwargs
 
@@ -82,8 +82,9 @@ class Track:
 
 
         #self.track_loaded_data = None
+        for render_method in self.render_methods:
+            render_method(self, fig, loaded_range)
 
-        self.render_method(self, fig, loaded_range)
         return fig
 
 # %% ../nbs/API/01_track.ipynb 13
@@ -143,20 +144,25 @@ def line(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
-         hover_data:List = None, #list of column names to be shown when hovering over the data
+         hover_data:List[str] = None, #list of column names to be shown when hovering over the data
          **kwargs #enables to pass keyword arguments used by the Bokeh function
         ):
     if hover_data is None:
         hover_data = []
-    if type(hover_data)==str:
+    elif type(hover_data) is str:
         hover_data = [hover_data]
+    elif type(hover_data) is list:
+        hover_data = hover_data.copy()
+    else:
+        raise ValueError("hover_data must be None, str, or List")
+
     def render_method(track, fig, loaded_range):
         loaded_data = track.set_figure_data_source(fig, pos, loaded_range)
         fig.line(source=loaded_data, x=pos, y=y, **kwargs)
     
     self.set_track_data_source(data, pos, columns=[y]+hover_data)
 
-    self.render_method = render_method
+    self.render_methods.append(render_method)
 
 
 # %% ../nbs/API/01_track.ipynb 18
@@ -174,8 +180,12 @@ def scatter(self:Track,
         ):
     if hover_data is None:
         hover_data = list()
-    if type(hover_data)==str:
+    elif type(hover_data) is str:
         hover_data = [hover_data]
+    elif type(hover_data) is list:
+        hover_data = hover_data.copy()
+    else:
+        raise ValueError("hover_data must be None, str, or List")
 
     def render_method(track, fig, loaded_range):
         loaded_data = track.set_figure_data_source(fig, pos, loaded_range)
@@ -192,7 +202,7 @@ def scatter(self:Track,
             
 
     self.set_track_data_source(data, pos=pos, columns=[y,factors]+hover_data)
-    self.render_method = render_method
+    self.render_methods.append(render_method)
     
 
 
@@ -203,61 +213,93 @@ def bar(self:Track,
          pos: str, #name of the column containing the positions along the genome
          y: str, #name of the column containing the data to be plotted on the y-axis
          factors: str = None, #name of a column of values to be used as factors
-         hover_data: list = [], #list of additional column names to be shown when hovering over the data
+         hover_data: List = None, #list of additional column names to be shown when hovering over the data
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
     
-    if type(hover_data)==str:
+    if hover_data is None:
+        hover_data = list()
+    elif type(hover_data) is str:
         hover_data = [hover_data]
-        
-    self._set_track_data_source(data, pos, columns=[y,factors]+hover_data)
-    
-    if factors!=None:
-        color=factor_cmap(factors,"Category10_3",tuple(set(data[factors].values)))
-        
-        self.fig.vbar(source=self.loaded_data, x=pos, top=y, color=color, legend_group=factors, **kwargs)
-
-        self.fig.legend.location = "top_left"
-        self.fig.legend.title = factors
+    elif type(hover_data) is list:
+        hover_data = hover_data.copy()
     else:
-        self.fig.vbar(source=self.loaded_data, x=pos, top=y, **kwargs)
-        
+        raise ValueError("hover_data must be None, str, or List")
+
+    def render_method(track, fig, loaded_range):
+        loaded_data = track.set_figure_data_source(fig, pos, loaded_range)
+        if factors!=None:
+            color=factor_cmap(factors,"Category10_3",tuple(set(data[factors].values)))
+            
+            fig.vbar(source=loaded_data, x=pos, top=y, color=color, legend_group=factors, **kwargs)
+    
+            fig.legend.location = "top_left"
+            fig.legend.title = factors
+        else:
+            fig.vbar(source=loaded_data, x=pos, top=y, **kwargs)
+
+    self.set_track_data_source(data, pos, columns=[y,factors]+hover_data)
+    self.render_methods.append(render_method)
 
 # %% ../nbs/API/01_track.ipynb 29
 @patch
 def highlight(self:Track,
-         data: pd.DataFrame, #pandas DataFrame containing the data
-         left: str = "left", #name of the column containing the start positions of the regions
-         right: str = "right", #name of the column containing the end positions of the regions
-         color: str = "color", #color of the regions
-         alpha: str = 0.2, #transparency
-         hover_data: list = [], #list of additional column names to be shown when hovering over the data
-         **kwargs, #enables to pass keyword arguments used by the Bokeh function
-        ):
+    data: pd.DataFrame = None, #pandas DataFrame containing the data
+    left_col: str = "left", #name of the column containing the start positions of the regions
+    right_col: str = "right", #name of the column containing the end positions of the regions
+    color_col: str = "color", #name of the column containing color of the regions
+    alpha_col: str = "alpha", #name of the column containing alpha of the regions 
+    left = None,
+    right = None,
+    color = "green",
+    alpha: str = 0.2, #transparency
+    hover_data: List[str] = None, #list of additional column names to be shown when hovering over the data
+    **kwargs, #enables to pass keyword arguments used by the Bokeh function
+    ):
     
-    if type(hover_data)==str:
+    if hover_data is None:
+        hover_data = list()
+    elif type(hover_data) is str:
         hover_data = [hover_data]
+    elif type(hover_data) is list:
+        hover_data = hover_data.copy()
+    else:
+        raise ValueError("hover_data must be None, str, or List")
 
-    if color not in data.columns:
-        data["color"]='green'
+    if color_col not in self.data.columns:
+        data[color_col] = 'green'
+    if alpha_col not in self.data.columns:
+        data[alpha_col] = alpha
 
-    data["alpha"]=alpha
-
-    highlight_source = ColumnDataSource(data[[left,right,"color","alpha"]+hover_data])
-
-    if self._ylim==None:
-        warnings.warn("When adding highlights to a track, ylim needs to be defined. \
-                      You can eigher set ylim manually when creating the track, or plot data using Track.line, Track.scatter or Track.bar before adding the highlight.")
+    if data is None:
+        if left is None or right is None or color is None:
+            raise ValueError("If `data` is not provided, then left, right, and color must be specified")
+        data = pd.DataFrame({left_col: [left], right_col: [right], color_col: [color], alpha_col: [alpha]})
+    else:
+        data = data.copy() # copy the dataframe because we modify it below, and users might not expect their input to be modified.
     
-    r=Quad(left=left, right=right,
-           bottom=self._ylim[0],
-           top=self._ylim[1],
-           fill_color="color",
-           fill_alpha="alpha",
-           line_alpha=0,
-           **kwargs)
+    def render_method(track, fig, loaded_range):
+        if color not in data.columns:
+            data[color_col]='green'
+    
+        data[alpha_col]=alpha
+    
+        highlight_source = ColumnDataSource(data[[left_col,right_col,color_col,alpha_col]+hover_data])
+    
+        if track.ylim is None:
+            warnings.warn("When adding highlights to a track, ylim needs to be defined. \
+                          You can eigher set ylim manually when creating the track, or plot data using Track.line, Track.scatter or Track.bar before adding the highlight.")
+        
+        r=Quad(left=left, right=right,
+               bottom=track.ylim[0],
+               top=track.ylim[1],
+               fill_color="color",
+               fill_alpha="alpha",
+               line_alpha=0,
+               **kwargs)
 
-    renderer= self.fig.add_glyph(highlight_source, r)
-    tooltips=[(f"{left} - {right}",f"@{left} - @{right}")]+[(f"{attr}",f"@{attr}") for attr in hover_data]
-    self.fig.add_tools(HoverTool(renderers=[renderer],
-                                        tooltips=tooltips))
+        renderer = fig.add_glyph(highlight_source, r)
+        tooltips=[(f"{left_col} - {right_col}",f"@{left_col} - @{right_col}")]+[(f"{attr}",f"@{attr}") for attr in hover_data]
+        fig.add_tools(HoverTool(renderers=[renderer],
+                                            tooltips=tooltips))
+    self.render_methods.append(render_method)
