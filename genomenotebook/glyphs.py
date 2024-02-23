@@ -22,6 +22,7 @@ from bokeh.models import (
 from .data import get_example_data_dir
 from genomenotebook.utils import (
     parse_gff,
+    parse_genbank,
 )
 
 from collections import defaultdict
@@ -196,14 +197,18 @@ def get_tooltip(feature, attributes, wrap=50):
     tooltips = list()
     tooltips.append(f'<span style="color:FireBrick">{feature["type"]}</span>')
 
-    if row_type in attributes:
-        if attributes[row_type] is not None:
-            for attribute in attributes[row_type]:
-                if attribute in feature["attributes"]:
+    if attributes is None: # append all
+        for attribute in feature["attributes"]:
+            tooltips.append(_format_attribute(attribute, feature['attributes'][attribute],wrap=wrap))
+    else:
+        if row_type in attributes:
+            if attributes[row_type] is not None:
+                for attribute in attributes[row_type]:
+                    if attribute in feature["attributes"]:
+                        tooltips.append(_format_attribute(attribute, feature['attributes'][attribute],wrap=wrap))
+            else: # append all
+                for attribute in feature["attributes"]:
                     tooltips.append(_format_attribute(attribute, feature['attributes'][attribute],wrap=wrap))
-        else: # append all
-            for attribute in feature["attributes"]:
-                tooltips.append(_format_attribute(attribute, feature['attributes'][attribute],wrap=wrap))
     return "<br>".join(tooltips)
 
 # %% ../nbs/API/02_glyphs.ipynb 22

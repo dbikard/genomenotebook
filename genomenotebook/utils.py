@@ -78,10 +78,9 @@ def extract_all_attributes(input_str:str)->OrderedDict: #TODO: why is this not l
 
 # %% ../nbs/API/02_utils.ipynb 14
 def extract_attributes(input_str:str, #the attribute string of a GFF fome
-                       attributes: Optional[List[int]] = None #an optional list of attribute names to extract. If None all attributes are extracted.
+                       attributes: Optional[List[str]] = None #an optional list of attribute names to extract. If None all attributes are extracted.
                        )->OrderedDict: 
     """Extracts attributes from the GFF attributes column"""
-    
     pattern = "(?P<key>\w+[-\w]*)=(?P<value>[^;]+)"
     match = re.findall(pattern, input_str)
     d=OrderedDict()
@@ -92,12 +91,14 @@ def extract_attributes(input_str:str, #the attribute string of a GFF fome
 
 # %% ../nbs/API/02_utils.ipynb 15
 def get_attributes(df: pd.DataFrame, #a features DataFrame with at least a "type" column and an "attributes_str" column
-                   attributes: Dict[str, List] = {} # a dictionary with feature types as keys and a list of attributes to extract as values 
+                   attributes: Optional[Dict[str, List]] = None # a dictionary with feature types as keys and a list of attributes to extract as values 
                    ) -> List:
-    """Iterates over each row of the df and extracts the attributes specified in the attributes dictionnary for each feature type"""
+    """Iterates over each row of the df and extracts the attributes specified in the attributes dictionary for each feature type"""
     attr_list=[]
-    for i,row in df.iterrows():
-        if row.type in attributes:
+    for i, row in df.iterrows():
+        if attributes is None:
+            attrs = None
+        elif row.type in attributes:
             attrs = attributes[row.type]
         else:
             attrs = None
@@ -152,7 +153,7 @@ def parse_gff(gff_path:str, # path to the gff file
               first: bool = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
               bounds: Optional[tuple] = None, # (left limit, right limit)
               feature_types: Optional[list] = None, # list of feature types to extract
-              attributes: Dict[str, List] = None, # a dictionnary with feature types as keys and a list of attributes to extract as values 
+              attributes: Optional[Dict[str, List]] = None, # a dictionary with feature types as keys and a list of attributes to extract as values 
              )->List[pd.DataFrame]:
     """ Parses a GFF3 file and returns a list of Pandas DataFrames with the data for a specific contig. 
     If seq_id is None then only the first contig is parsed.
@@ -370,14 +371,18 @@ from Bio import SeqRecord
 strand_dict = {1: "+", -1: "-"}
 
 def seqRecord_to_df(rec: SeqRecord,
-                    feature_types: list,
-                    attributes: Dict[str,list] = {}
+                    feature_types: Optional[List[str]] = None, # if None then get all features, otherwise only those with type in FeatureTypes.
+                    attributes: Optional[Dict[str,List]] = None 
+                    # if None, then get all attributes of all feature types. If dict, then only get attributes of feature types keys. If value is None, get all
                     )->pd.DataFrame:
                     
     feature_lists = []
     for feature in rec.features:
         if feature_types is None or feature.type in feature_types:
-            attrs=attributes.get(feature.type, None)
+            if attributes is None:
+                attrs = None
+            else:
+                attrs=attributes.get(feature.type, None)
             for part in feature.location.parts:
                 attributes_list = []#[("ID", get_cds_name(feature)),]
                 for key, value in feature.qualifiers.items():
@@ -399,12 +404,12 @@ def seqRecord_to_df(rec: SeqRecord,
 
 # %% ../nbs/API/02_utils.ipynb 45
 def parse_recs(recs, # iterator over Bio.SeqRecord.SeqRecord
-                  seq_id: Optional[str] = None, # sequence id (first column of the gff), if not None, then return only the annotations for the seq_id with this name
-                  first = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
-                  bounds: Optional[tuple] = None, # (left limit, right limit)
-                  feature_types: Optional[list] = None, # list of feature types to extract
-                  attributes: Dict[str, List] = {}, # a dictionary with feature types as keys and a list of attributes to extract as values 
-                  )->Tuple[List[Seq], List[pd.DataFrame]]:
+                   seq_id: Optional[str] = None, # sequence id (first column of the gff), if not None, then return only the annotations for the seq_id with this name
+                   first = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
+                   bounds: Optional[tuple] = None, # (left limit, right limit)
+                   feature_types: Optional[list] = None, # list of feature types to extract
+                   attributes: Optional[Dict[str, List]] = None, # a dictionary with feature types as keys and a list of attributes to extract as values 
+               )->Tuple[List[Seq], List[pd.DataFrame]]:
 
     # read genbank file(s)
     feature_dfs = [] # list of dataframes, one for each seq record used if seq_id == "all"
@@ -413,9 +418,9 @@ def parse_recs(recs, # iterator over Bio.SeqRecord.SeqRecord
         if seq_id == rec.id or seq_id is None:
             df = seqRecord_to_df(rec, feature_types=feature_types, attributes=attributes)
             if bounds is not None:
-                df=df.loc[(df.end>bounds[0]) & (df.start<bounds[1])]
+                df = df.loc[(df.end>bounds[0]) & (df.start<bounds[1])]
             
-            df=set_positions(df)
+            df = set_positions(df)
             feature_dfs.append(df)
             seqs.append(rec.seq)
             if first or seq_id is not None: # we only want one
@@ -431,7 +436,7 @@ def parse_genbank(gb_path, # path to the genbank file
                   first = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
                   bounds: Optional[tuple] = None, # (left limit, right limit)
                   feature_types: Optional[list] = None, # list of feature types to extract
-                  attributes: Dict[str, List] = {}, # a dictionary with feature types as keys and a list of attributes to extract as values 
+                  attributes: Optional[Dict[str, List]] = None, # a dictionary with feature types as keys and a list of attributes to extract as values 
                   )->Tuple[List[Seq], List[pd.DataFrame]]:
 
     return parse_recs(SeqIO.parse(gb_path, "genbank"), seq_id, first, bounds, feature_types, attributes)
