@@ -411,24 +411,43 @@ class GenomeStack():
             self.browsers = list()
 
 
-    def get_elements(self, output_backend:str="webgl"):
-        plots = [GenomePlot(browser, output_backend=output_backend) for browser in self.browsers]
-        
-        if len(plots) > 1:
-            plots[0].main_fig.xaxis.major_tick_line_color = None
-            plots[0].main_fig.xaxis.minor_tick_line_color = None
-            plots[0].main_fig.xaxis.major_label_text_font_size  = '0pt'
+    def get_widest(self):
+        """
+        returns the index of the widest Browser
+        """
+        widest = 0
+        width = float("-inf")
+        for i, browser in enumerate(self.browsers):
+            if browser.bounds[1] > width:
+                width = browser.bounds[1]
+                widest = i
+        return widest
     
-        for i, plot in enumerate(plots[1:]):
-            i = i+1
+    def get_elements(self, output_backend:str="webgl"):
+        
+        plots = [GenomePlot(browser, output_backend=output_backend) for browser in self.browsers]
+        widest_i = self.get_widest()
+        # print(widest_i)
+        # print(self.browsers[widest_i].bounds[1])
+        # if len(plots) > 1: # uncomment to hide coordinates on first plot
+        #     plots[0].main_fig.xaxis.major_tick_line_color = None
+        #     plots[0].main_fig.xaxis.minor_tick_line_color = None
+        #     plots[0].main_fig.xaxis.major_label_text_font_size  = '0pt'
+
+        for plot in plots:
+            plot.main_fig.x_range = plots[widest_i].main_fig.x_range
+            for track_fig in plot.track_figs:
+                track_fig.x_range = plots[widest_i].main_fig.x_range
+        
+        # for i, plot in enumerate(plots[1:]):
+        #     i = i+1
             
-            genome_fig = plot.main_fig
-            genome_fig.x_range = plots[0].main_fig.x_range
+        #     genome_fig = plot.main_fig
             
-            if i < len(plots)-1:
-                genome_fig.xaxis.major_tick_line_color = None
-                genome_fig.xaxis.minor_tick_line_color = None
-                genome_fig.xaxis.major_label_text_font_size  = '0pt'
+        #     if i < len(plots)-1: # uncomment to hide coordinates on all but last plot
+        #         genome_fig.xaxis.major_tick_line_color = None
+        #         genome_fig.xaxis.minor_tick_line_color = None
+        #         genome_fig.xaxis.major_label_text_font_size  = '0pt'
 
         all_elements = []
         for plot in plots:
