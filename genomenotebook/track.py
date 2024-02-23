@@ -29,7 +29,7 @@ except ImportError:
     
 import warnings
 
-from typing import List
+from typing import List, Callable
 
 
 
@@ -243,6 +243,19 @@ def bar(self:Track,
 
 # %% ../nbs/API/01_track.ipynb 29
 @patch
+def custom(self:Track,
+        func:Callable = None # function to be called. First argument is the figure
+        ):
+    
+
+
+    def render_method(track, fig, loaded_range):
+        func(fig)
+
+    self.render_methods.append(render_method)
+
+# %% ../nbs/API/01_track.ipynb 31
+@patch
 def highlight(self:Track,
     data: pd.DataFrame = None, #pandas DataFrame containing the data
     left_col: str = "left", #name of the column containing the start positions of the regions
@@ -277,7 +290,7 @@ def highlight(self:Track,
         data = pd.DataFrame({left_col: [left], right_col: [right], color_col: [color], alpha_col: [alpha]})
     else:
         data = data.copy() # copy the dataframe because we modify it below, and users might not expect their input to be modified.
-    
+
     def render_method(track, fig, loaded_range):
         if color not in data.columns:
             data[color_col]='green'
@@ -289,12 +302,11 @@ def highlight(self:Track,
         if track.ylim is None:
             warnings.warn("When adding highlights to a track, ylim needs to be defined. \
                           You can eigher set ylim manually when creating the track, or plot data using Track.line, Track.scatter or Track.bar before adding the highlight.")
-        
-        r=Quad(left=left, right=right,
+        r=Quad(left=left_col, right=right_col,
                bottom=track.ylim[0],
                top=track.ylim[1],
-               fill_color="color",
-               fill_alpha="alpha",
+               fill_color=color_col,
+               fill_alpha=alpha_col,
                line_alpha=0,
                **kwargs)
 

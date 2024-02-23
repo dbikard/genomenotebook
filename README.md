@@ -31,7 +31,7 @@ import genomenotebook as gn
 ```
 
 ``` python
-g=gn.GenomeBrowser(gff_path=gff_path, genome_path=fasta_path, init_pos=10000)
+g=gn.GenomeBrowser(gff_path=gff_path, fasta_path=fasta_path, init_pos=10000)
 g.show()
 ```
 

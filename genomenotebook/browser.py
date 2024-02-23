@@ -357,8 +357,8 @@ def save(self:GenomeBrowser,
             browser=None
 
     if ext == ".svg":
+        #export_svg(layout, filename=fname)
         export_svgs(layout, filename=fname, webdriver=browser)
-        
         if len(self.tracks)>0: # TODO: what is this?
             total_height=sum([self.height]+[t.height for t in self.tracks])
             svgelements=[compose.SVG(fname)]
@@ -386,26 +386,28 @@ class GenomeStack():
 
 
     def show(self):
-        for browser in self.browsers:
-            browser._get_browser_elements()
-        self.browsers[0].main_fig.xaxis.axis_label = self.browsers[0].seq_id
-        if len(self.browsers) > 1:
-            self.browsers[0].main_fig.xaxis.major_tick_line_color = None
-            self.browsers[0].main_fig.xaxis.minor_tick_line_color = None
-            self.browsers[0].main_fig.xaxis.major_label_text_font_size  = '0pt'
+        plots = [GenomePlot(browser) for browser in self.browsers]
+        
+        if len(plots) > 1:
+            plots[0].main_fig.xaxis.major_tick_line_color = None
+            plots[0].main_fig.xaxis.minor_tick_line_color = None
+            plots[0].main_fig.xaxis.major_label_text_font_size  = '0pt'
     
-        for i, browser in enumerate(self.browsers[1:]):
+        for i, plot in enumerate(plots[1:]):
             i = i+1
-            track = self.browsers[0].add_track()
-            track.fig = self.browsers[i].main_fig
-            track.fig.axis.axis_label = self.browsers[i].seq_id
-            track.fig.x_range = self.browsers[0].x_range
-            if i < len(self.browsers)-1:
-                track.fig.xaxis.major_tick_line_color = None
-                track.fig.xaxis.minor_tick_line_color = None
-                track.fig.xaxis.major_label_text_font_size  = '0pt'
-    
-        self.browsers[0].show()
+            
+            genome_fig = plot.main_fig
+            genome_fig.x_range = plots[0].main_fig.x_range
+            
+            if i < len(plots)-1:
+                genome_fig.xaxis.major_tick_line_color = None
+                genome_fig.xaxis.minor_tick_line_color = None
+                genome_fig.xaxis.major_label_text_font_size  = '0pt'
+
+        all_elements = []
+        for plot in plots:
+            all_elements.extend(plot.elements)
+        bk_show(column(all_elements))
         
         
     
@@ -835,8 +837,11 @@ class HighlightModifier(GenomeBrowserModifier):
         bottom = 0
         top = 1
         if track_mode:
-            bottom = track_properties["ylim"][0]
-            top = track_properties["ylim"][1]
+            ylim = track_properties.get("ylim", (0,1))
+            if ylim is None:
+                ylim = (0,1)
+            bottom = ylim[0]
+            top = ylim[1]
         
         r = Quad(left=self.left_col, right=self.right_col,
                 bottom=bottom,
