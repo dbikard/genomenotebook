@@ -69,9 +69,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import os
 from svgutils import compose
-import chromedriver_binary
 
-# output_notebook(hide_banner=True) #|hide_line
+output_notebook(hide_banner=True) #|hide_line
 
 from Bio import SeqIO
 import Bio
@@ -273,7 +272,7 @@ class GenomeBrowser:
                                             )
                                             
 
-# %% ../nbs/API/00_browser.ipynb 7
+# %% ../nbs/API/00_browser.ipynb 8
 @patch
 def add_track(self: GenomeBrowser,
              height: int = 200, #size of the track
@@ -288,7 +287,7 @@ def add_track(self: GenomeBrowser,
     return t
     
 
-# %% ../nbs/API/00_browser.ipynb 9
+# %% ../nbs/API/00_browser.ipynb 10
 @patch
 def show(self:GenomeBrowser):
     """
@@ -304,7 +303,7 @@ def show(elements):
     reset_output()
 
 
-# %% ../nbs/API/00_browser.ipynb 10
+# %% ../nbs/API/00_browser.ipynb 11
 @patch
 def save_html(self:GenomeBrowser, fname:str, title:str="Genome Plot"):
     plot = GenomePlot(self)
@@ -316,7 +315,7 @@ def save_html(elements, fname:str, title:str):
     bk_save(column(elements))
     reset_output()
 
-# %% ../nbs/API/00_browser.ipynb 11
+# %% ../nbs/API/00_browser.ipynb 12
 @patch
 def save(self:GenomeBrowser, 
          fname:str,
@@ -403,7 +402,7 @@ def save(elements, heights, width, fname:str, title:str="Genome Plot"):
     
     reset_output()
 
-# %% ../nbs/API/00_browser.ipynb 12
+# %% ../nbs/API/00_browser.ipynb 13
 class GenomeStack():
     def __init__(self, browsers = None):
         self.browsers = browsers
@@ -524,7 +523,7 @@ class GenomeStack():
             
     
 
-# %% ../nbs/API/00_browser.ipynb 13
+# %% ../nbs/API/00_browser.ipynb 14
 class GenomePlot():
     def __init__(self, browsers:Union[GenomeBrowser,List[GenomeBrowser]], 
                  output_backend:str="webgl" # can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
@@ -619,7 +618,7 @@ class GenomePlot():
             warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos = sum(self.browser.bounds)//2
 
-# %% ../nbs/API/00_browser.ipynb 21
+# %% ../nbs/API/00_browser.ipynb 22
 @patch
 def _add_annotations(self:GenomePlot):
     """
@@ -672,7 +671,7 @@ def _add_annotations(self:GenomePlot):
         )
     )
 
-# %% ../nbs/API/00_browser.ipynb 23
+# %% ../nbs/API/00_browser.ipynb 24
 @patch
 def _get_sequence_div(self:GenomePlot):
         ## Setting the div that will display the sequence
@@ -693,7 +692,7 @@ def _get_sequence_div(self:GenomePlot):
                         styles = sty,
                         )
 
-# %% ../nbs/API/00_browser.ipynb 25
+# %% ../nbs/API/00_browser.ipynb 26
 @patch
 def _set_js_callbacks(self:GenomePlot):
         ## Adding the ability to display the sequence when zooming in
@@ -726,7 +725,7 @@ def _set_js_callbacks(self:GenomePlot):
 
         self.main_fig.x_range.js_on_change('start', self._xcb, self._glyph_update_callback)
 
-# %% ../nbs/API/00_browser.ipynb 27
+# %% ../nbs/API/00_browser.ipynb 28
 @patch
 def _get_browser_elements(self:GenomePlot):
         self._add_annotations() 
@@ -738,7 +737,7 @@ def _get_browser_elements(self:GenomePlot):
         else:
             self.elements = [self.main_fig]
 
-# %% ../nbs/API/00_browser.ipynb 29
+# %% ../nbs/API/00_browser.ipynb 30
 @patch
 def _get_sequence_search(self:GenomePlot):
         seq_input = TextInput(placeholder="search by sequence")
@@ -807,7 +806,7 @@ def _get_sequence_search(self:GenomePlot):
 
         return row(seq_input, previousButton, nextButton)
 
-# %% ../nbs/API/00_browser.ipynb 31
+# %% ../nbs/API/00_browser.ipynb 32
 @patch
 def _get_search_box(self:GenomePlot):
         ## Create a text input widget for search
@@ -838,7 +837,7 @@ def _get_search_box(self:GenomePlot):
     
     
 
-# %% ../nbs/API/00_browser.ipynb 33
+# %% ../nbs/API/00_browser.ipynb 34
 @patch
 def _collect_elements(self:GenomePlot):
     self._get_browser_elements()
@@ -851,7 +850,7 @@ def _collect_elements(self:GenomePlot):
 
     return elements
 
-# %% ../nbs/API/00_browser.ipynb 61
+# %% ../nbs/API/00_browser.ipynb 64
 class GenomeBrowserModifier():
     def __init__(self, gene_track:bool = True, data_tracks:bool = False):
         self.gene_track = gene_track
@@ -960,7 +959,7 @@ def highlight(self:GenomeBrowser,
 
 
 
-# %% ../nbs/API/00_browser.ipynb 65
+# %% ../nbs/API/00_browser.ipynb 68
 # from bokeh.io import export_svgs, export_svg, export_png
 # from selenium.webdriver.chrome.service import Service
 # from selenium import webdriver
@@ -969,7 +968,7 @@ def highlight(self:GenomeBrowser,
 # from svgutils import compose
 # import chromedriver_binary
 
-# %% ../nbs/API/00_browser.ipynb 74
+# %% ../nbs/API/00_browser.ipynb 77
 @patch
 def add_tooltip_data(self:GenomeBrowser,
                     name: str, #name of the data to be added
