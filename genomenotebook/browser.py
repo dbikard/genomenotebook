@@ -552,7 +552,6 @@ class GenomePlot():
                 modifier.render(self.main_fig)
             if modifier.data_tracks:
                 for i, track in enumerate(self.tracks):
-                    
                     modifier.render(self.track_figs[i], True, track.__dict__)
             
         

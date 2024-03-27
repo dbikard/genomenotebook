@@ -30,6 +30,7 @@ import os
 from typing import *
 import copy
 import html
+import re
 
 # %% ../nbs/API/02_glyphs.ipynb 6
 from collections import defaultdict
@@ -172,7 +173,7 @@ def get_patch_coordinates(feature, glyphs_dict, feature_height=0.15, color_attri
 
 # %% ../nbs/API/02_glyphs.ipynb 17
 def html_wordwrap(input_string: str, line_len=50, start=0):
-    parts = input_string.split()
+    parts = re.split(r'(?<=,)|\s', input_string) #enables to split on commas as well as spaces
     out = list()
     running_sum = start
     for part in parts:
@@ -191,7 +192,7 @@ def _format_attribute(name, value, color="DodgerBlue", wrap=50):
         return f'<span style="color:{color}">{html.escape(name)}</span><span>: {html_wordwrap(html.escape(str(value)), wrap, len(name)+1)}</span>'
 
 
-# %% ../nbs/API/02_glyphs.ipynb 19
+# %% ../nbs/API/02_glyphs.ipynb 20
 def get_tooltip(feature, attributes, wrap=50):    
     row_type = feature["type"]
     tooltips = list()
@@ -211,7 +212,7 @@ def get_tooltip(feature, attributes, wrap=50):
                     tooltips.append(_format_attribute(attribute, feature['attributes'][attribute],wrap=wrap))
     return "<br>".join(tooltips)
 
-# %% ../nbs/API/02_glyphs.ipynb 22
+# %% ../nbs/API/02_glyphs.ipynb 23
 def get_feature_name(row, glyphs_dict):
     """ For each row of features DataFrame uses the Glyph object provided in the glyphs_dict to know which attribute to use as the name"""
     if glyphs_dict[row.type].show_name:
@@ -223,7 +224,7 @@ def get_feature_name(row, glyphs_dict):
     return ""
 
 
-# %% ../nbs/API/02_glyphs.ipynb 26
+# %% ../nbs/API/02_glyphs.ipynb 27
 def get_feature_patches(features: pd.DataFrame, #DataFrame of the features 
                         left: int, #left limit
                         right: int, #right limit
