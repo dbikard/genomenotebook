@@ -306,7 +306,7 @@ from collections import defaultdict
 
 # %% ../nbs/API/02_utils.ipynb 38
 def add_z_order(features, 
-                prescedence = ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA","exon"]):
+                prescedence = ["source", "CDS", "repeat_region", "ncRNA", "rRNA", "tRNA","exon"]):
     """
         features is a dataframe of features
         prescedence is a list of feature types in order of prescedence, e.g. ["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"] will put "CDS" features closer to the bottom of the plot than "repeat_region" features.

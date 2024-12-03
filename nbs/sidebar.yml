@@ -6,13 +6,11 @@ website:
       - 01_Options.ipynb
       - 02_Exporting plots.ipynb
       - 03_Stacking.ipynb
-      - test.html
       - test2.html
-      - test_with_labels.html
-      - test_without_labels.html
       - section: API
         contents:
           - API/00_browser.ipynb
           - API/01_track.ipynb
           - API/02_glyphs.ipynb
           - API/02_utils.ipynb
+          - API/test_2.html

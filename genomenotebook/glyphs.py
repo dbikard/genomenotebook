@@ -30,6 +30,7 @@ import os
 from typing import *
 import copy
 import html
+import re
 
 # %% ../nbs/API/02_glyphs.ipynb 6
 from collections import defaultdict
@@ -172,7 +173,7 @@ def get_patch_coordinates(feature, glyphs_dict, feature_height=0.15, color_attri
 
 # %% ../nbs/API/02_glyphs.ipynb 17
 def html_wordwrap(input_string: str, line_len=50, start=0):
-    parts = input_string.split()
+    parts = re.split("(\W|,|;|\|)", input_string)
     out = list()
     running_sum = start
     for part in parts:
@@ -183,7 +184,7 @@ def html_wordwrap(input_string: str, line_len=50, start=0):
         running_sum += len(part)
 
         
-    return " ".join(out)
+    return "".join(out)
     
 
 # %% ../nbs/API/02_glyphs.ipynb 18

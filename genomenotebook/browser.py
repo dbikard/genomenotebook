@@ -112,14 +112,14 @@ class GenomeBrowser:
                  label_angle: int = 45, # angle of the feature names displayed on top of the features
                  label_font_size: str = "10pt", # font size fo the feature names
                  label_justify: str = "center", # center, left
-                 label_vertical_offset: float = 0.03,
-                 label_horizontal_offset = -5,
-                 show_labels = True,
+                 label_vertical_offset: float = 0.03, # how far above a feature to draw the label
+                 label_horizontal_offset: float = -5, # how far to shift the feature label on the x-axis
+                 show_labels: bool = True, # if False, then don't show feature labels
                  feature_height: float = 0.15, #fraction of the annotation track height occupied by the features
                  features:pd.DataFrame = None, # DataFrame with columns: ["seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes"], where "attributes" is a dict of attributes.
                  seq:Bio.Seq.Seq = None, # keeps the Biopython sequence object
-                 color_attribute = None, # feature attribute to be used as patch color
-                 z_stack = False, #if true features that overlap will be stacked on top of each other
+                 color_attribute: str = None, # feature attribute to be used as patch color
+                 z_stack: bool = False, #if true features that overlap will be stacked on top of each other
                  **kwargs, #additional keyword arguments are passed as is to bokeh.plotting.figure
                  ):
         
@@ -308,7 +308,7 @@ def show(elements):
 @patch
 def save_html(self:GenomeBrowser, fname:str, title:str="Genome Plot"):
     plot = GenomePlot(self)
-    save_html(plot.elements)
+    save_html(plot.elements, fname, title)
 
 def save_html(elements, fname:str, title:str):
     reset_output()
@@ -319,13 +319,12 @@ def save_html(elements, fname:str, title:str):
 # %% ../nbs/API/00_browser.ipynb 11
 @patch
 def save(self:GenomeBrowser, 
-         fname:str,
-         title:str="Genome Plot"
+         fname:str, # filename
+         title:str="Genome Plot" #plot title
         ):
     """This function saves the initial plot that is generated and not the current view of the browser.
     To save in svg format you must initialise your GenomeBrowser using `output_backend="svg"` """
 
-    # TODO: this seems super buggy, but I don't understand why. I think Bokeh has some hidden state
     base_name, ext = os.path.splitext(fname)
     ext = ext.lower()
     if ext not in {".svg", ".png"}:
@@ -343,7 +342,6 @@ def save(self:GenomeBrowser,
     save(plot.elements, heights, self.width, fname, title)
 
 def save(elements, heights, width, fname:str, title:str="Genome Plot"):
-    # TODO: this seems super buggy, but I don't understand why. I think Bokeh has some hidden state
     base_name, ext = os.path.splitext(fname)
     ext = ext.lower()
     if ext not in {".svg", ".png"}:
