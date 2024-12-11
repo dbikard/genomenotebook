@@ -21,6 +21,10 @@ from bokeh.models import (
     Range1d,
     ColumnDataSource,
 )
+from bokeh.plotting import show as bk_show
+from bokeh.layouts import column, row
+from bokeh.io import output_notebook, reset_output
+
 from .data import get_example_data_dir
 from genomenotebook.utils import (
     parse_gff,
@@ -277,3 +281,11 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
         feature_patches["label_x"] = feature_patches["xbox_min"]
     
     return feature_patches
+
+# %% ../nbs/API/02_glyphs.ipynb 29
+def _gb_show(elements):
+    reset_output()
+    output_notebook(hide_banner=True)
+    bk_show(column(elements))
+    reset_output()
+
