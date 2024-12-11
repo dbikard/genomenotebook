@@ -250,6 +250,7 @@ def show(self:GenomeBrowser):
         Shows the plot in an interactive Jupyter notebook
     """
     plot = GenomePlot(self)
+    plot.elements = plot._collect_elements()
     _gb_show(plot.elements)
 
 # %% ../nbs/API/00_browser.ipynb 25

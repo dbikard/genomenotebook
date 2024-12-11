@@ -43,8 +43,6 @@ from bokeh.models import (
     NumeralTickFormatter, 
     LabelSet,
     HoverTool,
-    TapTool,
-    Quad
 )
 
 from bokeh.plotting import show as bk_show
@@ -65,7 +63,8 @@ class GenomePlot():
     def __init__(self, browsers:Union["GenomeBrowser",List["GenomeBrowser"]], #a GenomeBrowser object or list of GenomeBrowser objects when a GenomeStack is rendered
                  output_backend:str="webgl" # can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
                 ):
-        '''A GenomePlot object is created to handle all the rendering logic of GenomeBrowser objects'''
+        '''A GenomePlot object is created to handle all the rendering logic of GenomeBrowser objects. An empty figure is created upon initialization. 
+        Glyphs, sequence and search boxes are then added when calling GenomePlot.collect_elements.'''
 
         if isinstance(browsers, list):
             self.browser = browsers[0]
@@ -82,7 +81,6 @@ class GenomePlot():
         self.track_figs = []
         
         self._get_main_fig()
-        self.elements = self._collect_elements()
         
         for track in self.browser.tracks:
             self._add_track(track)
@@ -97,6 +95,8 @@ class GenomePlot():
         
         for browser in self.child_browsers:
             pass # TODO: merge in GenomeStack.show()
+
+
 
     def _add_track(self, track):
         fig = track.get_fig(
@@ -157,20 +157,7 @@ class GenomePlot():
             warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos = sum(self.browser.bounds)//2
 
-# %% ../nbs/API/03_plot.ipynb 9
-@patch
-def _collect_elements(self:GenomePlot):
-    self._get_browser_elements()
-    elements = self.elements.copy()
-    if self.browser.search:
-        search_elements = [self._get_search_box()]
-        if self.browser.show_seq:
-             search_elements.append(self._get_sequence_search())
-        elements = [row(search_elements)]+elements
-
-    return elements
-
-# %% ../nbs/API/03_plot.ipynb 10
+# %% ../nbs/API/03_plot.ipynb 8
 @patch
 def _add_annotations(self:GenomePlot):
     """
@@ -223,7 +210,7 @@ def _add_annotations(self:GenomePlot):
         )
     )
 
-# %% ../nbs/API/03_plot.ipynb 11
+# %% ../nbs/API/03_plot.ipynb 10
 @patch
 def _get_sequence_div(self:GenomePlot):
         ## Setting the div that will display the sequence
@@ -277,37 +264,6 @@ def _set_js_callbacks(self:GenomePlot):
 
         self.main_fig.x_range.js_on_change('start', self._xcb, self._glyph_update_callback)
 
-# %% ../nbs/API/03_plot.ipynb 13
-@patch
-def _get_search_box(self:GenomePlot):
-        ## Create a text input widget for search
-        completions=set()
-        #for attr in self.patches.columns:
-        #    if not attr in ["xs","ys","color","pos"]:
-        #        completions.update(map(str,set(self.patches[attr])))
-        completions.update(map(str,set(self.browser.patches["names"])))
-        
-        search_input = AutocompleteInput(completions=list(completions), placeholder="search by name")
-        #search_input = TextInput()
-        
-        call_back_search = CustomJS(
-            args={
-                "x_range": self.x_range,
-                "glyph_source": self._glyph_source,
-                "bounds": self.browser.bounds,
-                "all_glyphs": self.browser.patches.to_dict(orient="list"),
-                "loaded_range": self._loaded_range,
-                "div": self._div,
-            },
-            code=search_callback_code
-        )
-
-        search_input.js_on_change('value', call_back_search, self._xcb, self._glyph_update_callback)
-
-        return search_input
-    
-    
-
 # %% ../nbs/API/03_plot.ipynb 14
 @patch
 def _get_browser_elements(self:GenomePlot):
@@ -320,76 +276,7 @@ def _get_browser_elements(self:GenomePlot):
         else:
             self.elements = [self.main_fig]
 
-# %% ../nbs/API/03_plot.ipynb 15
-@patch
-def _get_sequence_search(self:GenomePlot):
-        seq_input = TextInput(placeholder="search by sequence")
-
-        ## Adding BoxAnnotation to highlight search results
-        search_span_source = ColumnDataSource({"x":[],"width":[],"fill_color":[]})#"y":[]
-        h=Rect(x='x',y=0,
-               width='width',
-               height=self.main_fig.height,
-               fill_color='fill_color',
-               line_color="fill_color",
-               fill_alpha=0.2,
-               line_alpha=0.4)
-        
-        self.main_fig.add_glyph(search_span_source, h)
-
-        call_back_sequence_search = CustomJS(
-            args={
-                "x_range": self.x_range,
-                "sequence": self.sequence_dic,
-                "bounds": self.browser.bounds,
-                "search_span_source": search_span_source,
-            },
-            code=sequence_search_code
-        )
-
-        seq_input.js_on_change('value',call_back_sequence_search, self._xcb, self._glyph_update_callback)
-        
-        sty=Styles(
-                   margin_left="1px",
-                   margin_right="1px",
-                   border = "none",
-                   #width = "10px",
-                )
-        
-        nextButton = Button(icon=TablerIcon("arrow-right"),
-                            label="",
-                            #button_type="primary",
-                            styles = sty)
-        
-        nextButton_callback = CustomJS(
-            args={
-                "x_range": self.x_range,
-                "bounds": self.browser.bounds,
-                "search_span_source": search_span_source,
-            },
-            code=next_button_code)
-        
-        nextButton.js_on_event("button_click", nextButton_callback, self._xcb, self._glyph_update_callback)
-        
-        previousButton = Button(icon=TablerIcon("arrow-left"),
-                                label="",
-                                styles = sty,
-                                #button_type="primary"
-                               )
-        
-        previousButton_callback = CustomJS(
-            args={
-                "x_range": self.x_range,
-                "bounds": self.browser.bounds,
-                "search_span_source": search_span_source,
-            },
-            code=previous_button_code)
-        
-        previousButton.js_on_event("button_click", previousButton_callback, self._xcb, self._glyph_update_callback)
-
-        return row(seq_input, previousButton, nextButton)
-
-# %% ../nbs/API/03_plot.ipynb 17
+# %% ../nbs/API/03_plot.ipynb 16
 @patch
 def _get_search_box(self:GenomePlot):
         ## Create a text input widget for search
@@ -418,108 +305,11 @@ def _get_search_box(self:GenomePlot):
 
         return search_input
 
-# %% ../nbs/API/03_plot.ipynb 20
-@patch
-def _collect_elements(self:GenomePlot):
-    self._get_browser_elements()
-    elements = self.elements.copy()
-    if self.browser.search:
-        search_elements = [self._get_search_box()]
-        if self.browser.show_seq:
-             search_elements.append(self._get_sequence_search())
-        elements = [row(search_elements)]+elements
-
-    return elements
-
-# %% ../nbs/API/03_plot.ipynb 21
-@patch
-def _add_annotations(self:GenomePlot):
-    """
-    Creates the Bokeh ColumnDataSource objects for the glyphs and add the glyphs and labels to the main_fig
-    """
-    
-    #Filter initial glyphs by position
-    feature_patches = self.browser.patches.loc[(
-        self.browser.patches['xs'].apply(
-            lambda x: max(x)>self.x_range.start-self.browser.max_glyph_loading_range)) & (
-        self.browser.patches['xs'].apply(
-            lambda x: min(x)<self.x_range.end+self.browser.max_glyph_loading_range)
-        )].copy()
-    
-    self._glyph_source = ColumnDataSource(feature_patches.to_dict(orient="list"))
-    
-    #Information about the range currently plotted
-    self._loaded_range = ColumnDataSource({"start":[self.x_range.start-self.browser.max_glyph_loading_range],
-                                            "end":[self.x_range.end+self.browser.max_glyph_loading_range], 
-                                            "range":[self.browser.max_glyph_loading_range]})
-    
-    glyph_renderer = self.main_fig.add_glyph(
-        self._glyph_source, Patches(xs="xs", ys="ys", fill_color="color", fill_alpha="alpha")
-    )
-    # gene labels in the annotation track
-    # This seems to be necessary to show the labels
-    #self.main_fig.scatter(x="label_x", y=0, size=0, source=self._glyph_source)
-    
-    #ys = list()
-    
-    if self.browser.show_labels:
-        labels = LabelSet(
-            x="label_x",
-            y="label_y",
-            text="names",
-            level="glyph",
-            x_offset=self.browser.label_horizontal_offset,
-            y_offset=0,
-            source=self._glyph_source,
-            text_align='left',
-            text_font_size=self.browser.label_font_size,
-            angle=self.browser.label_angle,
-        )
-
-        self.main_fig.add_layout(labels)
-    self.main_fig.add_tools(
-        HoverTool(
-            renderers=[glyph_renderer],
-            tooltips="<div>@attributes</div>",
-        )
-    )
-
-# %% ../nbs/API/03_plot.ipynb 22
-@patch
-def _set_js_callbacks(self:GenomePlot):
-        ## Adding the ability to display the sequence when zooming in
-        self.sequence_dic = {
-            'seq': str(self.browser.seq).upper() if self.browser.show_seq else "",
-            'bounds':self.browser.bounds,
-        }
-
-        self._xcb = CustomJS(
-            args={
-                "x_range": self.main_fig.x_range,
-                "sequence": self.sequence_dic,
-                "all_glyphs":self.browser.patches.to_dict(orient="list"),
-                "glyph_source": self._glyph_source,
-                "div": self._div,
-                "loaded_range":self._loaded_range,
-            },
-            code=x_range_change_callback_code
-        )
-        
-        self._glyph_update_callback = CustomJS(
-            args={
-                "x_range": self.main_fig.x_range,
-                "all_glyphs":self.browser.patches.to_dict(orient="list"),
-                "glyph_source": self._glyph_source,
-                "loaded_range":self._loaded_range,
-            },
-            code=glyph_update_callback_code
-        )
-
-        self.main_fig.x_range.js_on_change('start', self._xcb, self._glyph_update_callback)
-
-# %% ../nbs/API/03_plot.ipynb 23
+# %% ../nbs/API/03_plot.ipynb 18
 @patch
 def _get_sequence_search(self:GenomePlot):
+        """Returns a row of Bokeh elements containing the sequence search box a previous button and a next button"""
+
         seq_input = TextInput(placeholder="search by sequence")
 
         ## Adding BoxAnnotation to highlight search results
@@ -586,54 +376,35 @@ def _get_sequence_search(self:GenomePlot):
 
         return row(seq_input, previousButton, nextButton)
 
-# %% ../nbs/API/03_plot.ipynb 24
+# %% ../nbs/API/03_plot.ipynb 20
 @patch
-def _get_browser_elements(self:GenomePlot):
-        self._add_annotations() 
-        self._get_sequence_div()
-        self._set_js_callbacks()
-
+def _collect_elements(self:GenomePlot):
+    """collects and assembles all the main figure elements including the sequence div and search boxes"""
+    self._get_browser_elements()
+    elements = self.elements.copy()
+    if self.browser.search:
+        search_elements = [self._get_search_box()]
         if self.browser.show_seq:
-            self.elements = [self.main_fig,self._div]
-        else:
-            self.elements = [self.main_fig]
+            search_elements.append(self._get_sequence_search())
+        elements = [row(search_elements)]+elements
 
-# %% ../nbs/API/03_plot.ipynb 26
-@patch
-def _get_sequence_div(self:GenomePlot):
-        ## Setting the div that will display the sequence
-        sty=Styles(font_size='14px',
-                font_family="Courrier",
-                color="black",
-                display="inline-block",
-                overflow="hidden",
-                background_color = "white",
-                margin="0",
-                margin_left= "2px",
-                )
-        
-        self._div = Div(height=18, height_policy="fixed", 
-                        width=self.browser.width, 
-                        max_width=self.browser.width,
-                        width_policy="fixed",
-                        styles = sty,
-                        )
+    return elements
 
-# %% ../nbs/API/03_plot.ipynb 34
+# %% ../nbs/API/03_plot.ipynb 24
 def _save_html(elements, fname:str, title:str):
     reset_output()
     bk_output_file(filename=fname, title=title, mode='inline')
     bk_save(column(elements))
     reset_output()
 
-# %% ../nbs/API/03_plot.ipynb 35
+# %% ../nbs/API/03_plot.ipynb 25
 def _gb_show(elements):
     reset_output()
     output_notebook(hide_banner=True)
     bk_show(column(elements))
     reset_output()
 
-# %% ../nbs/API/03_plot.ipynb 36
+# %% ../nbs/API/03_plot.ipynb 26
 def _save(elements, heights, width, fname:str, title:str="Genome Plot"):
     base_name, ext = os.path.splitext(fname)
     ext = ext.lower()
