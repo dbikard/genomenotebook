@@ -388,21 +388,21 @@ def _collect_elements(self:GenomePlot):
             for i, track in enumerate(self.tracks):
                 modifier.render(self.track_figs[i], True, track.__dict__)
 
-# %% ../nbs/API/03_plot.ipynb 24
+# %% ../nbs/API/03_plot.ipynb 25
 def _save_html(elements, fname:str, title:str):
     reset_output()
     bk_output_file(filename=fname, title=title, mode='inline')
     bk_save(column(elements))
     reset_output()
 
-# %% ../nbs/API/03_plot.ipynb 25
+# %% ../nbs/API/03_plot.ipynb 26
 def _gb_show(elements):
     reset_output()
     output_notebook(hide_banner=True)
     bk_show(column(elements))
     reset_output()
 
-# %% ../nbs/API/03_plot.ipynb 26
+# %% ../nbs/API/03_plot.ipynb 27
 def _save(elements, heights, width, fname:str, title:str="Genome Plot"):
     base_name, ext = os.path.splitext(fname)
     ext = ext.lower()
