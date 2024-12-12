@@ -81,18 +81,7 @@ class GenomePlot():
         self.track_figs = []
         
         self._get_main_fig()
-        
-        for track in self.browser.tracks:
-            self._add_track(track)
 
-        for modifier in self.browser.modifiers:
-            if modifier.gene_track:
-                modifier.render(self.main_fig)
-            if modifier.data_tracks:
-                for i, track in enumerate(self.tracks):
-                    modifier.render(self.track_figs[i], True, track.__dict__)
-            
-        
         for browser in self.child_browsers:
             pass # TODO: merge in GenomeStack.show()
 
@@ -388,7 +377,16 @@ def _collect_elements(self:GenomePlot):
             search_elements.append(self._get_sequence_search())
         elements = [row(search_elements)]+elements
 
-    return elements
+    self.elements = elements
+    for track in self.browser.tracks:
+        self._add_track(track)
+
+    for modifier in self.browser.modifiers:
+        if modifier.gene_track:
+            modifier.render(self.main_fig)
+        if modifier.data_tracks:
+            for i, track in enumerate(self.tracks):
+                modifier.render(self.track_figs[i], True, track.__dict__)
 
 # %% ../nbs/API/03_plot.ipynb 24
 def _save_html(elements, fname:str, title:str):

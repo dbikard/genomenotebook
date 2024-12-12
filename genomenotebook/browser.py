@@ -250,7 +250,7 @@ def show(self:GenomeBrowser):
         Shows the plot in an interactive Jupyter notebook
     """
     plot = GenomePlot(self)
-    plot.elements = plot._collect_elements()
+    plot._collect_elements()
     _gb_show(plot.elements)
 
 # %% ../nbs/API/00_browser.ipynb 25
@@ -398,6 +398,7 @@ def add_tooltip_data(self:GenomeBrowser,
 @patch
 def save_html(self:GenomeBrowser, fname:str, title:str="Genome Plot"):
     plot = GenomePlot(self)
+    plot._collect_elements()
     _save_html(plot.elements, fname, title)
 
 # %% ../nbs/API/00_browser.ipynb 39
@@ -423,6 +424,7 @@ def save(self:GenomeBrowser,
     for track in self.tracks:
         heights.append(track.height)
     
+    plot._collect_elements()
     _save(plot.elements, heights, self.width, fname, title)
 
 
@@ -475,6 +477,7 @@ class GenomeStack():
 
         all_elements = []
         for plot in plots:
+            plot._collect_elements()
             all_elements.extend(plot.elements)
         
         return all_elements
