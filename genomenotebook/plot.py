@@ -56,7 +56,7 @@ class GenomePlot():
                  output_backend:str="webgl" # can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
                 ):
         '''A GenomePlot object is created to handle all the rendering logic of GenomeBrowser objects. An empty figure is created upon initialization. 
-        Glyphs, sequence and search boxes are then added when calling GenomePlot.collect_elements.'''
+        Glyphs, sequence and search boxes are then added when calling GenomePlot._collect_elements.'''
 
         if isinstance(browsers, list):
             self.browser = browsers[0]

@@ -5,8 +5,12 @@
 # %% auto 0
 __all__ = ['Track']
 
-# %% ../nbs/API/01_track.ipynb 5
+# %% ../nbs/API/01_track.ipynb 4
 from fastcore.basics import *
+
+from bokeh.io import output_notebook #|hide_line
+output_notebook(hide_banner=True) #|hide_line
+
 
 from bokeh.plotting import figure
 
@@ -35,7 +39,7 @@ from typing import List, Callable
 
 
 
-# %% ../nbs/API/01_track.ipynb 8
+# %% ../nbs/API/01_track.ipynb 7
 class Track:
     """ Track objects should only be created through GenomeBrowser.add_track """
     def __init__(self,
@@ -89,7 +93,7 @@ class Track:
 
         return fig
 
-# %% ../nbs/API/01_track.ipynb 13
+# %% ../nbs/API/01_track.ipynb 12
 @patch
 def set_track_data_source(self:Track, 
                           data:pd.DataFrame, # data to be plotted
@@ -140,7 +144,7 @@ def set_figure_data_source(self:Track, fig, pos, loaded_range):
     return loaded_data
 
 
-# %% ../nbs/API/01_track.ipynb 14
+# %% ../nbs/API/01_track.ipynb 13
 @patch
 def line(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -167,10 +171,10 @@ def line(self:Track,
     self.render_methods.append(render_method)
 
 
-# %% ../nbs/API/01_track.ipynb 18
+# %% ../nbs/API/01_track.ipynb 17
 from bokeh.transform import factor_cmap
 
-# %% ../nbs/API/01_track.ipynb 19
+# %% ../nbs/API/01_track.ipynb 18
 @patch
 def scatter(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -208,7 +212,7 @@ def scatter(self:Track,
     
 
 
-# %% ../nbs/API/01_track.ipynb 25
+# %% ../nbs/API/01_track.ipynb 24
 @patch
 def bar(self:Track,
          data: pd.DataFrame, #pandas DataFrame containing the data
@@ -243,7 +247,7 @@ def bar(self:Track,
     self.set_track_data_source(data, pos, columns=[y,factors]+hover_data)
     self.render_methods.append(render_method)
 
-# %% ../nbs/API/01_track.ipynb 29
+# %% ../nbs/API/01_track.ipynb 28
 @patch
 def custom(self:Track,
         func:Callable = None # function to be called. First argument is the figure
@@ -256,7 +260,7 @@ def custom(self:Track,
 
     self.render_methods.append(render_method)
 
-# %% ../nbs/API/01_track.ipynb 31
+# %% ../nbs/API/01_track.ipynb 30
 @patch
 def highlight(self:Track,
     data: pd.DataFrame = None, #pandas DataFrame containing the data
