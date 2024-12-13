@@ -110,6 +110,7 @@ celerybeat-schedule
 .env
 
 # virtualenv
+.conda/
 .venv
 venv/
 ENV/
@@ -161,3 +162,4 @@ checklink/cookies.txt
 # Quarto
 .quarto
 
+genomenotebook/_modidx.py
