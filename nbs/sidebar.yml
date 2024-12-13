@@ -11,5 +11,5 @@ website:
           - API/00_browser.ipynb
           - API/01_track.ipynb
           - API/02_glyphs.ipynb
-          - API/02_utils.ipynb
-          - API/test_2.html
+          - API/03_plot.ipynb
+          - API/04_utils.ipynb

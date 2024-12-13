@@ -491,15 +491,82 @@ from bokeh.layouts import column, row
 from bokeh.io import output_notebook, reset_output
 from bokeh.plotting import save as bk_save #Need to rename the bokeh show function so that there is no confusion with GenomeBrowser.show
 from bokeh.plotting import output_file as bk_output_file #Need to rename the bokeh show function so that there is no confusion with GenomeBrowser.show
+from bokeh.io import output_notebook, reset_output, export_png, export_svgs, export_svg
+from svgutils import compose
+import os
+import warnings
+from selenium.webdriver.chrome.options import Options
+from selenium import webdriver
 
 # %% ../nbs/API/04_utils.ipynb 61
+def _save(elements, heights, width, fname:str, title:str="Genome Plot"):
+    base_name, ext = os.path.splitext(fname)
+    ext = ext.lower()
+    if ext not in {".svg", ".png"}:
+        raise ValueError(f"filename must end in svg or png, not {ext}")
+    
+    reset_output()
+    bk_output_file(filename=fname, title=title)
+    
+    layout = column(elements)
+
+    if in_wsl():
+            ## Setup chrome options
+            chrome_options = Options()
+            chrome_options.add_argument("--headless") # Ensure GUI is off
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-3d-apis")
+            chrome_options.add_argument("--disable-blink-features")
+            
+
+            homedir = os.path.expanduser("~")
+            try:
+                    # webdriver_service = Service(f"{homedir}/chromedriver/stable/chromedriver")
+                    # browser = webdriver.Chrome(service=webdriver_service, options=chrome_options)
+                    browser = webdriver.Chrome(options=chrome_options)
+            except:
+                    warnings.warn("""If using WSL you can install chromedriver following these instructions:https://scottspence.com/posts/use-chrome-in-ubuntu-wsl
+                                  Also make sure the chromedriver-binary python package has the same major version number as your chrome install.
+                                  Check the chrome version using: google-chrome --version
+                                   Then use pip to force install of a web driver with a compatible version, for example:
+                                   pip install --force-reinstall -v "chromedriver-binary==121.0.6167.184.0"
+                                   """)
+                    browser=None
+
+            
+    else:
+            browser=None
+
+    if ext == ".svg":
+        #export_svg(layout, filename=fname)
+        export_svgs(layout, filename=fname, webdriver=browser)
+        if len(heights)>1: # TODO: what is this?
+            total_height=sum(heights)
+            svgelements=[compose.SVG(fname)]
+            offset=heights[0]
+            for i, height in enumerate(heights[1:]):
+                svgelements.append(
+                    compose.SVG(f"{base_name}_{i+1}.svg").move(0,offset)
+                )
+                offset+=height
+                
+            compose.Figure(width+50, # +50 accounts for axis and labels
+                           total_height, 
+                           *svgelements).save(f"{base_name}_composite.svg")
+
+    else:
+        export_png(layout, filename=fname, webdriver=browser)
+    
+    reset_output()
+
+# %% ../nbs/API/04_utils.ipynb 65
 def _save_html(elements, fname:str, title:str):
     reset_output()
     bk_output_file(filename=fname, title=title, mode='inline')
     bk_save(column(elements))
     reset_output()
 
-# %% ../nbs/API/04_utils.ipynb 62
+# %% ../nbs/API/04_utils.ipynb 66
 def _gb_show(elements):
     reset_output()
     output_notebook(hide_banner=True)

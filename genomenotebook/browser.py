@@ -15,13 +15,13 @@ from genomenotebook.utils import (
     parse_fasta,
     parse_genbank,
     add_z_order,
+    _save_html,
+    _gb_show,
+    _save
 )
 
 from genomenotebook.plot import (
     GenomePlot,
-    _save_html,
-    _gb_show,
-    _save
 )
 
 from genomenotebook.glyphs import (
@@ -243,7 +243,7 @@ class GenomeBrowser:
                                             color_attribute = self.color_attribute
                                             )
 
-# %% ../nbs/API/00_browser.ipynb 15
+# %% ../nbs/API/00_browser.ipynb 16
 @patch
 def show(self:GenomeBrowser):
     """
@@ -253,7 +253,7 @@ def show(self:GenomeBrowser):
     plot._collect_elements()
     _gb_show(plot.elements)
 
-# %% ../nbs/API/00_browser.ipynb 25
+# %% ../nbs/API/00_browser.ipynb 26
 @patch
 def add_track(self: GenomeBrowser,
              height: int = 200, #size of the track
@@ -268,7 +268,7 @@ def add_track(self: GenomeBrowser,
     return t
     
 
-# %% ../nbs/API/00_browser.ipynb 28
+# %% ../nbs/API/00_browser.ipynb 29
 class GenomeBrowserModifier():
     def __init__(self, gene_track:bool = True, data_tracks:bool = False):
         self.gene_track = gene_track
@@ -277,7 +277,7 @@ class GenomeBrowserModifier():
     def apply(self, fig):
       raise NotImplementedError()
 
-# %% ../nbs/API/00_browser.ipynb 29
+# %% ../nbs/API/00_browser.ipynb 30
 class HighlightModifier(GenomeBrowserModifier):
     def __init__(self,
         data: pd.DataFrame = None, #pandas DataFrame containing the data
@@ -361,7 +361,7 @@ class HighlightModifier(GenomeBrowserModifier):
 
 
 
-# %% ../nbs/API/00_browser.ipynb 30
+# %% ../nbs/API/00_browser.ipynb 31
 @patch
 def highlight(self:GenomeBrowser,
         data: pd.DataFrame = None, #pandas DataFrame containing the data
@@ -380,7 +380,7 @@ def highlight(self:GenomeBrowser,
     modifier = HighlightModifier(data, left_col, right_col, color_col, alpha_col, left, right, color, alpha, hover_data, **kwargs)
     self.modifiers.append(modifier)
 
-# %% ../nbs/API/00_browser.ipynb 35
+# %% ../nbs/API/00_browser.ipynb 36
 @patch
 def add_tooltip_data(self:GenomeBrowser,
                     name: str, #name of the data to be added
@@ -394,14 +394,14 @@ def add_tooltip_data(self:GenomeBrowser,
         self.patches.loc[i,"attributes"] += "<br>"+_format_attribute(name,values[i])
 
 
-# %% ../nbs/API/00_browser.ipynb 38
+# %% ../nbs/API/00_browser.ipynb 39
 @patch
 def save_html(self:GenomeBrowser, fname:str, title:str="Genome Plot"):
     plot = GenomePlot(self)
     plot._collect_elements()
     _save_html(plot.elements, fname, title)
 
-# %% ../nbs/API/00_browser.ipynb 39
+# %% ../nbs/API/00_browser.ipynb 40
 @patch
 def save(self:GenomeBrowser, 
          fname:str, # file name (must end in .svg or . png).\n If using svg, GenomeBrowser needs to be initialized with `output_backend="svg"`
@@ -429,7 +429,7 @@ def save(self:GenomeBrowser,
 
 
 
-# %% ../nbs/API/00_browser.ipynb 47
+# %% ../nbs/API/00_browser.ipynb 48
 class GenomeStack():
     def __init__(self, browsers = None):
         self.browsers = browsers
