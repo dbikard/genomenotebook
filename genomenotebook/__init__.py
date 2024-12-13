@@ -1,4 +1,4 @@
-__version__ = "0.8.10"
+__version__ = "1.0.0"
 
 from .data import get_example_data_dir
 from .browser import GenomeBrowser, GenomeStack
