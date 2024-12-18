@@ -90,6 +90,7 @@ class GenomeBrowser:
                  seq:Bio.Seq.Seq = None, # keeps the Biopython sequence object
                  color_attribute: str = None, # feature attribute to be used as patch color
                  z_stack: bool = False, #if true features that overlap will be stacked on top of each other
+                 attr_panel: bool = True, #if true creates a panel on the right of the plot to display attributes on click
                  **kwargs, #additional keyword arguments are passed as is to bokeh.plotting.figure
                  ):
         
@@ -124,6 +125,7 @@ class GenomeBrowser:
         self.seq = seq
         self.color_attribute = color_attribute
         self.z_stack = z_stack
+        self.attr_panel = attr_panel
         self.kwargs=kwargs
         
         

@@ -20,7 +20,8 @@ from genomenotebook.javascript import (
     search_callback_code,
     sequence_search_code,
     next_button_code,
-    previous_button_code
+    previous_button_code,
+    attr_callback_code
 )
 
 from bokeh.plotting import figure
@@ -41,6 +42,8 @@ from bokeh.models import (
     NumeralTickFormatter, 
     LabelSet,
     HoverTool,
+    Tap,
+    TapTool
 )
 
 from bokeh.plotting import show as bk_show
@@ -247,17 +250,64 @@ def _set_js_callbacks(self:GenomePlot):
 
 # %% ../nbs/API/03_plot.ipynb 14
 @patch
+def _get_attributes_div(self:GenomePlot):
+        ## Setting the div that will display the sequence
+        sty=Styles(font_size='12px',
+                font_family="Arial",
+                color="black",
+                display="inline-block",
+                overflow_y= "scroll",
+                overflow_x= "visible",
+                background_color = "white",
+                border = "1px solid lightgray",
+                padding = "2px",
+                margin="0",
+                margin_left= "5px",
+                word_wrap="break-all",
+                white_space= "normal"
+                )
+        
+        self._attrDiv = Div(text='<span style="color:gray; opacity:0.6;"> click on a feature to display its attributes here</span>', 
+                            height=self.browser.height, 
+                            height_policy="fixed", 
+                            width=200, 
+                            max_width=200,
+                            width_policy="auto",
+                            styles = sty,
+                            )
+
+# %% ../nbs/API/03_plot.ipynb 16
+@patch
+def _set_attr_js_callbacks(self:GenomePlot):
+    attr_callback = CustomJS(
+            args={
+                "glyph_source": self._glyph_source,
+                "attrDiv": self._attrDiv,
+            },
+            code=attr_callback_code)
+        
+    self.main_fig.add_tools(TapTool(callback=attr_callback))
+
+# %% ../nbs/API/03_plot.ipynb 18
+@patch
 def _get_browser_elements(self:GenomePlot):
         self._add_annotations() 
         self._get_sequence_div()
         self._set_js_callbacks()
 
-        if self.browser.show_seq:
-            self.elements = [self.main_fig,self._div]
+        if self.browser.attr_panel:
+            self._get_attributes_div()
+            self._set_attr_js_callbacks()
+            first_row = row(self.main_fig, self._attrDiv)
         else:
-            self.elements = [self.main_fig]
+            first_row = self.main_fig
 
-# %% ../nbs/API/03_plot.ipynb 16
+        if self.browser.show_seq:
+            self.elements = [first_row,self._div]
+        else:
+            self.elements = [first_row]
+
+# %% ../nbs/API/03_plot.ipynb 20
 @patch
 def _get_search_box(self:GenomePlot):
         ## Create a text input widget for search
@@ -286,7 +336,7 @@ def _get_search_box(self:GenomePlot):
 
         return search_input
 
-# %% ../nbs/API/03_plot.ipynb 18
+# %% ../nbs/API/03_plot.ipynb 22
 @patch
 def _get_sequence_search(self:GenomePlot):
         """Returns a row of Bokeh elements containing the sequence search box a previous button and a next button"""
@@ -357,7 +407,7 @@ def _get_sequence_search(self:GenomePlot):
 
         return row(seq_input, previousButton, nextButton)
 
-# %% ../nbs/API/03_plot.ipynb 20
+# %% ../nbs/API/03_plot.ipynb 24
 @patch
 def _collect_elements(self:GenomePlot):
     """collects and assembles all the main figure elements including the sequence div and search boxes"""
