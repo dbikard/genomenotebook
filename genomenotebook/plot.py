@@ -256,22 +256,21 @@ def _get_attributes_div(self:GenomePlot):
                 font_family="Arial",
                 color="black",
                 display="inline-block",
-                overflow_y= "scroll",
+                overflow_y= "auto",
                 overflow_x= "visible",
                 background_color = "white",
                 border = "1px solid lightgray",
                 padding = "2px",
                 margin="0",
                 margin_left= "5px",
-                word_wrap="break-all",
                 white_space= "normal"
                 )
         
         self._attrDiv = Div(text='<span style="color:gray; opacity:0.6;"> click on a feature to display its attributes here</span>', 
-                            height=self.browser.height, 
-                            height_policy="fixed", 
-                            width=200, 
-                            max_width=200,
+                            height=self.browser.get_total_height(), 
+                            height_policy="auto", 
+                            #width="100%", 
+                            #max_width=200,
                             width_policy="auto",
                             styles = sty,
                             )
@@ -295,17 +294,10 @@ def _get_browser_elements(self:GenomePlot):
         self._get_sequence_div()
         self._set_js_callbacks()
 
-        if self.browser.attr_panel:
-            self._get_attributes_div()
-            self._set_attr_js_callbacks()
-            first_row = row(self.main_fig, self._attrDiv)
-        else:
-            first_row = self.main_fig
-
         if self.browser.show_seq:
-            self.elements = [first_row,self._div]
+            self.elements = [self.main_fig,self._div]
         else:
-            self.elements = [first_row]
+            self.elements = [self.main_fig]
 
 # %% ../nbs/API/03_plot.ipynb 20
 @patch
@@ -422,6 +414,14 @@ def _collect_elements(self:GenomePlot):
     self.elements = elements
     for track in self.browser.tracks:
         self._add_track(track)
+
+    if self.browser.attr_panel:
+        self._get_attributes_div()
+        self._set_attr_js_callbacks()
+        self.elements = row(column(self.elements),self._attrDiv)
+    else:
+        self.elements = column(self.elements)
+    
 
     for modifier in self.browser.modifiers:
         if modifier.gene_track:

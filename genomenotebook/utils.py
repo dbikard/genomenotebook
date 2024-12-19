@@ -570,5 +570,5 @@ def _save_html(elements, fname:str, title:str):
 def _gb_show(elements):
     reset_output()
     output_notebook(hide_banner=True)
-    bk_show(column(elements))
+    bk_show(elements)
     reset_output()

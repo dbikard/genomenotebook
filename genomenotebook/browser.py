@@ -36,6 +36,7 @@ from bokeh.models import (
     Quad
 )
 
+from bokeh.layouts import column, row
 from bokeh.io import output_notebook
 
 output_notebook(hide_banner=True) #|hide_line
@@ -244,6 +245,16 @@ class GenomeBrowser:
                                             label_justify=self.label_justify,
                                             color_attribute = self.color_attribute
                                             )
+        
+    def get_total_height(self):
+        h = self.height
+        for t in self.tracks:
+            h += t.height
+        if self.show_seq:
+            h+=20
+        if self.search:
+            h+=40
+        return h
 
 # %% ../nbs/API/00_browser.ipynb 16
 @patch
@@ -270,7 +281,7 @@ def add_track(self: GenomeBrowser,
     return t
     
 
-# %% ../nbs/API/00_browser.ipynb 29
+# %% ../nbs/API/00_browser.ipynb 31
 class GenomeBrowserModifier():
     def __init__(self, gene_track:bool = True, data_tracks:bool = False):
         self.gene_track = gene_track
@@ -279,7 +290,7 @@ class GenomeBrowserModifier():
     def apply(self, fig):
       raise NotImplementedError()
 
-# %% ../nbs/API/00_browser.ipynb 30
+# %% ../nbs/API/00_browser.ipynb 32
 class HighlightModifier(GenomeBrowserModifier):
     def __init__(self,
         data: pd.DataFrame = None, #pandas DataFrame containing the data
@@ -363,7 +374,7 @@ class HighlightModifier(GenomeBrowserModifier):
 
 
 
-# %% ../nbs/API/00_browser.ipynb 31
+# %% ../nbs/API/00_browser.ipynb 33
 @patch
 def highlight(self:GenomeBrowser,
         data: pd.DataFrame = None, #pandas DataFrame containing the data
@@ -382,7 +393,7 @@ def highlight(self:GenomeBrowser,
     modifier = HighlightModifier(data, left_col, right_col, color_col, alpha_col, left, right, color, alpha, hover_data, **kwargs)
     self.modifiers.append(modifier)
 
-# %% ../nbs/API/00_browser.ipynb 36
+# %% ../nbs/API/00_browser.ipynb 38
 @patch
 def add_tooltip_data(self:GenomeBrowser,
                     name: str, #name of the data to be added
@@ -396,14 +407,14 @@ def add_tooltip_data(self:GenomeBrowser,
         self.patches.loc[i,"attributes"] += "<br>"+_format_attribute(name,values[i])
 
 
-# %% ../nbs/API/00_browser.ipynb 39
+# %% ../nbs/API/00_browser.ipynb 41
 @patch
 def save_html(self:GenomeBrowser, fname:str, title:str="Genome Plot"):
     plot = GenomePlot(self)
     plot._collect_elements()
     _save_html(plot.elements, fname, title)
 
-# %% ../nbs/API/00_browser.ipynb 40
+# %% ../nbs/API/00_browser.ipynb 42
 @patch
 def save(self:GenomeBrowser, 
          fname:str, # file name (must end in .svg or . png).\n If using svg, GenomeBrowser needs to be initialized with `output_backend="svg"`
@@ -431,7 +442,7 @@ def save(self:GenomeBrowser,
 
 
 
-# %% ../nbs/API/00_browser.ipynb 48
+# %% ../nbs/API/00_browser.ipynb 50
 class GenomeStack():
     def __init__(self, browsers = None):
         self.browsers = browsers
@@ -477,12 +488,16 @@ class GenomeStack():
         #         genome_fig.xaxis.minor_tick_line_color = None
         #         genome_fig.xaxis.major_label_text_font_size  = '0pt'
 
-        all_elements = []
+
         for plot in plots:
             plot._collect_elements()
-            all_elements.extend(plot.elements)
         
-        return all_elements
+        all_elements= column(plots[0].elements)
+        if len(plots)>1:
+            for plot in plots[1:]:
+                all_elements = column(all_elements, plot.elements)
+        
+        return column(all_elements)
 
     def get_heights(self):
         heights = []
