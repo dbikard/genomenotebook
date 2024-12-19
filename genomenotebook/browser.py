@@ -492,10 +492,9 @@ class GenomeStack():
         for plot in plots:
             plot._collect_elements()
         
-        all_elements= column(plots[0].elements)
-        if len(plots)>1:
-            for plot in plots[1:]:
-                all_elements = column(all_elements, plot.elements)
+        all_elements= []
+        for plot in plots:
+            all_elements.append(plot.elements)
         
         return column(all_elements)
 
