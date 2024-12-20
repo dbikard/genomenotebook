@@ -442,7 +442,7 @@ def save(self:GenomeBrowser,
 
 
 
-# %% ../nbs/API/00_browser.ipynb 50
+# %% ../nbs/API/00_browser.ipynb 49
 class GenomeStack():
     def __init__(self, browsers = None):
         self.browsers = browsers

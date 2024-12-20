@@ -43,7 +43,8 @@ from bokeh.models import (
     LabelSet,
     HoverTool,
     Tap,
-    TapTool
+    TapTool,
+    InlineStyleSheet
 )
 
 from bokeh.plotting import show as bk_show
@@ -53,7 +54,7 @@ from bokeh.plotting import save as bk_save #Need to rename the bokeh show functi
 import os
 import warnings
 
-# %% ../nbs/API/03_plot.ipynb 7
+# %% ../nbs/API/03_plot.ipynb 8
 class GenomePlot():
     def __init__(self, browsers:Union["GenomeBrowser",List["GenomeBrowser"]], #a GenomeBrowser object or list of GenomeBrowser objects when a GenomeStack is rendered
                  output_backend:str="webgl" # can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
@@ -141,7 +142,7 @@ class GenomePlot():
             warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos = sum(self.browser.bounds)//2
 
-# %% ../nbs/API/03_plot.ipynb 8
+# %% ../nbs/API/03_plot.ipynb 9
 @patch
 def _add_annotations(self:GenomePlot):
     """
@@ -194,7 +195,7 @@ def _add_annotations(self:GenomePlot):
         )
     )
 
-# %% ../nbs/API/03_plot.ipynb 10
+# %% ../nbs/API/03_plot.ipynb 11
 @patch
 def _get_sequence_div(self:GenomePlot):
         ## Setting the div that will display the sequence
@@ -215,7 +216,7 @@ def _get_sequence_div(self:GenomePlot):
                         styles = sty,
                         )
 
-# %% ../nbs/API/03_plot.ipynb 12
+# %% ../nbs/API/03_plot.ipynb 13
 @patch
 def _set_js_callbacks(self:GenomePlot):
         ## Adding the ability to display the sequence when zooming in
@@ -248,46 +249,7 @@ def _set_js_callbacks(self:GenomePlot):
 
         self.main_fig.x_range.js_on_change('start', self._xcb, self._glyph_update_callback)
 
-# %% ../nbs/API/03_plot.ipynb 14
-@patch
-def _get_attributes_div(self:GenomePlot):
-        ## Setting the div that will display the sequence
-        sty=Styles(font_size='12px',
-                font_family="Arial",
-                color="black",
-                display="inline-block",
-                overflow_y= "auto",
-                overflow_x= "visible",
-                background_color = "white",
-                border = "1px solid lightgray",
-                padding = "2px",
-                margin="0",
-                margin_left= "5px",
-                white_space= "normal"
-                )
-        
-        self._attrDiv = Div(text='<span style="color:gray; opacity:0.6;"> click on a feature to display its attributes here</span>', 
-                            height=self.browser.get_total_height(), 
-                            height_policy="auto", 
-                            #width="100%", 
-                            #max_width=200,
-                            width_policy="auto",
-                            styles = sty,
-                            )
-
-# %% ../nbs/API/03_plot.ipynb 16
-@patch
-def _set_attr_js_callbacks(self:GenomePlot):
-    attr_callback = CustomJS(
-            args={
-                "glyph_source": self._glyph_source,
-                "attrDiv": self._attrDiv,
-            },
-            code=attr_callback_code)
-        
-    self.main_fig.add_tools(TapTool(callback=attr_callback))
-
-# %% ../nbs/API/03_plot.ipynb 18
+# %% ../nbs/API/03_plot.ipynb 15
 @patch
 def _get_browser_elements(self:GenomePlot):
         self._add_annotations() 
@@ -299,7 +261,7 @@ def _get_browser_elements(self:GenomePlot):
         else:
             self.elements = [self.main_fig]
 
-# %% ../nbs/API/03_plot.ipynb 20
+# %% ../nbs/API/03_plot.ipynb 17
 @patch
 def _get_search_box(self:GenomePlot):
         ## Create a text input widget for search
@@ -328,7 +290,7 @@ def _get_search_box(self:GenomePlot):
 
         return search_input
 
-# %% ../nbs/API/03_plot.ipynb 22
+# %% ../nbs/API/03_plot.ipynb 19
 @patch
 def _get_sequence_search(self:GenomePlot):
         """Returns a row of Bokeh elements containing the sequence search box a previous button and a next button"""
@@ -399,7 +361,66 @@ def _get_sequence_search(self:GenomePlot):
 
         return row(seq_input, previousButton, nextButton)
 
-# %% ../nbs/API/03_plot.ipynb 24
+# %% ../nbs/API/03_plot.ipynb 21
+@patch
+def _get_attributes_div(self:GenomePlot):
+        ## Setting the div that will display the sequence
+        """stylesheet = InlineStyleSheet(css='.attr_div {\
+                                          font-size: 12px;\
+                                          font-family: Arial;\
+                                          color: black;\
+                                          display: inline-block;\
+                                          overflow-y: auto;\
+                                          overflow-x: visible;\
+                                          background-color: white;\
+                                          border: 1px solid lightgray;\
+                                          padding: 2px;\
+                                          margin: 0;\
+                                          margin-left: 5px;\
+                                          white-space: normal;}'
+                                    )"""
+
+        sty=Styles(font_size='12px',
+                font_family="Arial",
+                color="black",
+                display= "inline-block",
+                overflow_y= "auto",
+                overflow_x= "visible",
+                background_color = "white",
+                border = "1px solid lightgray",
+                padding = "2px",
+                margin="0",
+                margin_left= "5px",
+                white_space= "normal",
+                width="auto",
+                max_width="300px",
+                min_width="50px",
+                box_sizing= "border-box",
+                position= "relative",
+                )
+        
+        self._attrDiv = Div(text='<span style="color:gray; opacity:0.6;"> click on a feature to<br>display its attributes here</span>', 
+                            max_height=self.browser.get_total_height(), 
+                            #height_policy="auto", 
+                            #width_policy="auto",
+                            styles = sty,
+                            #stylesheets=[stylesheet],
+                            #css_classes=["attr_div"]
+                            )
+
+# %% ../nbs/API/03_plot.ipynb 23
+@patch
+def _set_attr_js_callbacks(self:GenomePlot):
+    attr_callback = CustomJS(
+            args={
+                "glyph_source": self._glyph_source,
+                "attrDiv": self._attrDiv,
+            },
+            code=attr_callback_code)
+        
+    self.main_fig.add_tools(TapTool(callback=attr_callback))
+
+# %% ../nbs/API/03_plot.ipynb 25
 @patch
 def _collect_elements(self:GenomePlot):
     """collects and assembles all the main figure elements including the sequence div and search boxes"""

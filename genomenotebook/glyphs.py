@@ -4,8 +4,8 @@
 
 # %% auto 0
 __all__ = ['default_types', 'default_attributes', 'Y_RANGE', 'default_glyphs', 'get_y_range', 'arrow_coordinates',
-           'box_coordinates', 'Glyph', 'get_default_glyphs', 'get_patch_coordinates', 'html_wordwrap', 'get_tooltip',
-           'get_feature_name', 'get_feature_patches']
+           'box_coordinates', 'Glyph', 'get_default_glyphs', 'get_patch_coordinates', 'html_wordwrap',
+           'get_feature_name', 'get_tooltip', 'get_feature_patches']
 
 # %% ../nbs/API/02_glyphs.ipynb 5
 import numpy as np
@@ -188,10 +188,23 @@ def _format_attribute(name, value, color="DodgerBlue", wrap=50):
 
 
 # %% ../nbs/API/02_glyphs.ipynb 20
-def get_tooltip(feature, attributes, wrap=50):    
+def get_feature_name(row, glyphs_dict):
+    """ For each row of features DataFrame uses the Glyph object provided in the glyphs_dict to know which attribute to use as the name"""
+    if glyphs_dict[row.type].show_name:
+        if glyphs_dict[row["type"]].name_attr in row.attributes:
+            return row.attributes[glyphs_dict[row.type].name_attr]
+        elif len(row.attributes) > 0:
+                return next(iter(row.attributes.values()))
+        
+    return ""
+
+
+# %% ../nbs/API/02_glyphs.ipynb 22
+def get_tooltip(feature, attributes, glyph_dict, wrap=50):    
     row_type = feature["type"]
     tooltips = list()
-    tooltips.append(f'<span style="color:FireBrick">{feature["type"]}</span>')
+    name = get_feature_name(feature, glyph_dict)
+    tooltips.append(f'<span style="color:FireBrick">{name} ({feature["type"]})</span>')
 
     if attributes is None: # append all
         for attribute in feature["attributes"]:
@@ -206,18 +219,6 @@ def get_tooltip(feature, attributes, wrap=50):
                 for attribute in feature["attributes"]:
                     tooltips.append(_format_attribute(attribute, feature['attributes'][attribute],wrap=wrap))
     return "<br>".join(tooltips)
-
-# %% ../nbs/API/02_glyphs.ipynb 23
-def get_feature_name(row, glyphs_dict):
-    """ For each row of features DataFrame uses the Glyph object provided in the glyphs_dict to know which attribute to use as the name"""
-    if glyphs_dict[row.type].show_name:
-        if glyphs_dict[row["type"]].name_attr in row.attributes:
-            return row.attributes[glyphs_dict[row.type].name_attr]
-        elif len(row.attributes) > 0:
-                return next(iter(row.attributes.values()))
-        
-    return ""
-
 
 # %% ../nbs/API/02_glyphs.ipynb 27
 def get_feature_patches(features: pd.DataFrame, #DataFrame of the features 
@@ -246,7 +247,7 @@ def get_feature_patches(features: pd.DataFrame, #DataFrame of the features
     names=list(features.apply(get_feature_name,glyphs_dict=glyphs_dict, axis=1)
                )
     
-    tooltips=list(features.apply(lambda row: get_tooltip(row, attributes),
+    tooltips=list(features.apply(lambda row: get_tooltip(row, attributes, glyphs_dict),
                              axis=1)
                  )
 
