@@ -62,7 +62,7 @@ easy to develop Python packages with Jupyter Notebooks.
 
 Clone your forked repository to your local machine by running the
 following command in your terminal:
-`bash git clone https://github.com/<your-username>/genomenotebook.git`
+`bash git clone https://github.com/dbikard/genomenotebook.git`
 
 Navigate to the cloned directory: `bash cd genomenotebook`
 
