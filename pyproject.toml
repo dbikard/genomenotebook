@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "genomenotebook"
+dynamic = ["version"]
+description = "A genome browser in your Jupyter notebook"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "Apache-2.0"}
+authors = [{name = "David Bikard", email = "dbikard@pasteur.fr"}]
+keywords = ['nbdev', 'jupyter', 'notebook', 'python']
+classifiers = ["Natural Language :: English", "Intended Audience :: Developers", "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only"]
+dependencies = ['numpy>=1.23.5', 'biopython>=1.78', 'pandas>=1.5.3', 'bokeh>=3.1.0,<3.3.0', 'fastcore', 'jupyter', 'selenium', 'svgutils', 'chromedriver_binary']
+
+[project.urls]
+Repository = "https://github.com/dbikard/genomenotebook"
+Documentation = "https://dbikard.github.io/genomenotebook"
+
+[project.entry-points.nbdev]
+genomenotebook = "genomenotebook._modidx:d"
+
+[project.optional-dependencies]
+dev = ['pyBigWig']
+
+[tool.setuptools.dynamic]
+version = {attr = "genomenotebook.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["genomenotebook"]
+
+[tool.nbdev]
+jupyter_hooks = true
