@@ -32,3 +32,4 @@ include = ["genomenotebook"]
 
 [tool.nbdev]
 jupyter_hooks = true
+tst_flags = "notest"
