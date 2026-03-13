@@ -9,7 +9,7 @@ __all__ = ['strand_dict', 'download_file', 'is_gzipped_file', 'default_open_gz',
            'add_z_order', 'get_cds_unique_name', 'get_cds_name', 'seqRecord_to_df', 'parse_recs', 'parse_genbank',
            'inspect_feature_types', 'in_wsl', 'add_extension']
 
-# %% ../nbs/API/04_utils.ipynb #da52b808
+# %% ../nbs/API/04_utils.ipynb #f275ee3e
 import numpy as np
 import pandas as pd
 import io
@@ -30,7 +30,7 @@ from IPython.display import display, HTML
 
 
 
-# %% ../nbs/API/04_utils.ipynb #50fae51b
+# %% ../nbs/API/04_utils.ipynb #bee3e5c5
 def download_file(url, save_path):
     """Checks if a file with the same name is already in the save_path. If not download it."""
     if os.path.exists(save_path):
@@ -39,7 +39,7 @@ def download_file(url, save_path):
         urllib.request.urlretrieve(url, save_path)
         print(f"File downloaded and saved: {save_path}")
 
-# %% ../nbs/API/04_utils.ipynb #41b628b1
+# %% ../nbs/API/04_utils.ipynb #f9395f8b
 def is_gzipped_file(file_path):
     try:
         with gzip.open(file_path, 'rb') as f:
@@ -49,7 +49,7 @@ def is_gzipped_file(file_path):
     except IOError:
         return False
 
-# %% ../nbs/API/04_utils.ipynb #a1ab3f01
+# %% ../nbs/API/04_utils.ipynb #fa30ae6e
 def default_open_gz(gff_path):
     """If file is gzipped then opens it with `gzip.open`, otherwise opens it with `open`"""
     if is_gzipped_file(gff_path):
@@ -57,7 +57,7 @@ def default_open_gz(gff_path):
     else:
         return open(gff_path,'r')
 
-# %% ../nbs/API/04_utils.ipynb #a0a8027f
+# %% ../nbs/API/04_utils.ipynb #38fb0a85
 def extract_attribute(input_str:str, #attribute string to parse
                       attr_name:str, #name of the attribute to extract
                      ) -> str:
@@ -70,7 +70,7 @@ def extract_attribute(input_str:str, #attribute string to parse
     else:
         return None
 
-# %% ../nbs/API/04_utils.ipynb #40e9e89f
+# %% ../nbs/API/04_utils.ipynb #58a0fc9e
 def extract_all_attributes(input_str:str)->OrderedDict: #TODO: why is this not limited by the attributes subset provided to GenomeBrowser?
     """Extracts all attributes from the GFF attributes column"""
     
@@ -80,7 +80,7 @@ def extract_all_attributes(input_str:str)->OrderedDict: #TODO: why is this not l
     d.update(match)
     return d
 
-# %% ../nbs/API/04_utils.ipynb #06dec8dc
+# %% ../nbs/API/04_utils.ipynb #a675dd44
 def extract_attributes(input_str:str, #the attribute string of a GFF fome
                        attributes: Optional[List[str]] = None #an optional list of attribute names to extract. If None all attributes are extracted.
                        )->OrderedDict: 
@@ -93,7 +93,7 @@ def extract_attributes(input_str:str, #the attribute string of a GFF fome
     d.update(match)
     return d
 
-# %% ../nbs/API/04_utils.ipynb #d765946c
+# %% ../nbs/API/04_utils.ipynb #8606acc4
 def get_attributes(df: pd.DataFrame, #a features DataFrame with at least a "type" column and an "attributes_str" column
                    attributes: Optional[Dict[str, List]] = None # a dictionary with feature types as keys and a list of attributes to extract as values 
                    ) -> List:
@@ -111,7 +111,7 @@ def get_attributes(df: pd.DataFrame, #a features DataFrame with at least a "type
 
     return attr_list
 
-# %% ../nbs/API/04_utils.ipynb #e1965560
+# %% ../nbs/API/04_utils.ipynb #fe73a9dc
 def attributes_to_columns(features: pd.DataFrame):
     attr_dicts=features.attributes.apply(extract_all_attributes)
     all_keys=list(set().union(*[d.keys() for d in attr_dicts]))
@@ -125,7 +125,7 @@ def attributes_to_columns(features: pd.DataFrame):
     return features
     
 
-# %% ../nbs/API/04_utils.ipynb #1e21acc4
+# %% ../nbs/API/04_utils.ipynb #1e25b0a5
 def set_positions(annotation: pd.DataFrame, # an annotation DataFrame extracted from a gff file
                             ) ->  pd.DataFrame:
     """Sets left and right as the position of the feature on the sequence, left is always lower than right.
@@ -147,11 +147,11 @@ def set_positions(annotation: pd.DataFrame, # an annotation DataFrame extracted 
     
     return annotation
 
-# %% ../nbs/API/04_utils.ipynb #35d077f8
+# %% ../nbs/API/04_utils.ipynb #67cf82bd
 class EmptyDataFrame(Exception):
     pass
 
-# %% ../nbs/API/04_utils.ipynb #916a44c5
+# %% ../nbs/API/04_utils.ipynb #e177e611
 def parse_gff(gff_path:str, # path to the gff file
               seq_id: Optional[str] = None, # sequence id (first column of the gff), if not None, then return only the annotations for the seq_id with this name
               first: bool = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
@@ -207,8 +207,8 @@ def parse_gff(gff_path:str, # path to the gff file
                 if seq_id is None: #
                     seq_id = current_line_seqid
                 if r[0]==seq_id:
-                    if feature_types is None or r[2] in feature_types:
-                        if bounds is None or (int(r[3])<bounds[1] and int(r[4])>bounds[0]):
+                    if feature_types==None or r[2] in feature_types:
+                        if bounds==None or (int(r[3])<bounds[1] and int(r[4])>bounds[0]):
                             # Write each line to the file buffer
                             file_buffer.write(line)
                             buffer_empty=False
@@ -220,7 +220,7 @@ def parse_gff(gff_path:str, # path to the gff file
         raise EmptyDataFrame("The annotation DataFrame is empty. Check that the feature_types and seq_id are correct, and that bounds (if specified) fall within the size of your genome.")
     return out
 
-# %% ../nbs/API/04_utils.ipynb #b63ea3e2
+# %% ../nbs/API/04_utils.ipynb #4ab054b7
 def available_feature_types(gff_path):
     ftypes=set()
     with default_open_gz(gff_path) as handle:
@@ -231,12 +231,12 @@ def available_feature_types(gff_path):
                     ftypes.add(r[2])
     return ftypes
 
-# %% ../nbs/API/04_utils.ipynb #ae23eef7
+# %% ../nbs/API/04_utils.ipynb #ca4eaaf6
 def available_attributes(gff_path):
     features=parse_gff(gff_path)[0]
     return features.columns
 
-# %% ../nbs/API/04_utils.ipynb #859ba1f1
+# %% ../nbs/API/04_utils.ipynb #9f8fb4ce
 def parse_fasta(genome_path, seq_id):
     """Retrieves the Biopython SeqRecord object that matches the seq_id in a fasta file"""
 
@@ -253,7 +253,7 @@ def parse_fasta(genome_path, seq_id):
     
     return rec.seq
 
-# %% ../nbs/API/04_utils.ipynb #fa62cf23
+# %% ../nbs/API/04_utils.ipynb #6900d82d
 def regions_overlap(region1, region2, min_overlap_fraction=0.0):
     """
         regions are tuples of start and stop coordinates
@@ -306,10 +306,10 @@ def regions_overlap(region1, region2, min_overlap_fraction=0.0):
     return False
     
 
-# %% ../nbs/API/04_utils.ipynb #a8fac829
+# %% ../nbs/API/04_utils.ipynb #e866834f
 from collections import defaultdict
 
-# %% ../nbs/API/04_utils.ipynb #02288df9
+# %% ../nbs/API/04_utils.ipynb #3ec397d6
 def add_z_order(features, 
                 prescedence = ["source", "CDS", "repeat_region", "ncRNA", "rRNA", "tRNA","exon"]):
     """
@@ -347,7 +347,7 @@ def add_z_order(features,
 
     features.sort_values(by="start", inplace=True)
 
-# %% ../nbs/API/04_utils.ipynb #3a14ada8
+# %% ../nbs/API/04_utils.ipynb #c280bac7
 #### Code from Domainator
 def get_cds_unique_name(feature):
     """
@@ -369,10 +369,10 @@ def get_cds_name(feature): #(contig_id, feature):
         return get_cds_unique_name(feature)
 #### End code from Domainator
 
-# %% ../nbs/API/04_utils.ipynb #96a4e79a
+# %% ../nbs/API/04_utils.ipynb #5b4a878e
 from Bio import SeqRecord
 
-# %% ../nbs/API/04_utils.ipynb #94adbfb8
+# %% ../nbs/API/04_utils.ipynb #cda207ef
 strand_dict = {1: "+", -1: "-"}
 
 def seqRecord_to_df(rec: SeqRecord,
@@ -395,7 +395,7 @@ def seqRecord_to_df(rec: SeqRecord,
                         continue
                     #if key == "ID":
                     #    continue
-                    if (attrs is None) or (key in attrs):
+                    if (attrs==None) or (key in attrs):
                         if len(value) == 1:
                             attributes_list.append((key, value[0]))
                         else:
@@ -407,7 +407,7 @@ def seqRecord_to_df(rec: SeqRecord,
     df=pd.DataFrame(feature_lists, columns=["seq_id", "source", "type", "start", "end", "score", "strand", "phase", "attributes"])
     return df
 
-# %% ../nbs/API/04_utils.ipynb #55a7da7b
+# %% ../nbs/API/04_utils.ipynb #fbd27786
 def parse_recs(recs, # iterator over Bio.SeqRecord.SeqRecord
                    seq_id: Optional[str] = None, # sequence id (first column of the gff), if not None, then return only the annotations for the seq_id with this name
                    first = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
@@ -435,7 +435,7 @@ def parse_recs(recs, # iterator over Bio.SeqRecord.SeqRecord
         raise EmptyDataFrame("The annotation DataFrame is empty. Check that the feature_types and seq_id are correct, and that bounds (if specified) fall within the size of your genome.")
     return seqs, feature_dfs
 
-# %% ../nbs/API/04_utils.ipynb #809f4027
+# %% ../nbs/API/04_utils.ipynb #15b8cb61
 def parse_genbank(gb_path, # path to the genbank file
                   seq_id: Optional[str] = None, # sequence id (first column of the gff), if not None, then return only the annotations for the seq_id with this name
                   first = True, # if True then return only the annotations for the first sequence (or the first with seq_id)
@@ -449,7 +449,7 @@ def parse_genbank(gb_path, # path to the genbank file
     return recs
 
 
-# %% ../nbs/API/04_utils.ipynb #89abf7fe
+# %% ../nbs/API/04_utils.ipynb #296b1f5c
 def inspect_feature_types(file_path: str, 
                           frmt: str #gff or genbank
                           ):
@@ -474,18 +474,18 @@ def inspect_feature_types(file_path: str,
     df_output = pd.DataFrame(table_data, columns=["feature_type", "attributes"])
     display(HTML(df_output.to_html(index=False)))
 
-# %% ../nbs/API/04_utils.ipynb #92d0c699
+# %% ../nbs/API/04_utils.ipynb #2c31231c
 def in_wsl() -> bool:
     return 'microsoft-standard' in uname().release
 
-# %% ../nbs/API/04_utils.ipynb #69624e20
+# %% ../nbs/API/04_utils.ipynb #ce01824f
 def add_extension(filename,extension="svg"):
     base_name, ext = os.path.splitext(filename)
     if ext.lower() != '.'+extension:
         filename += '.'+extension
     return filename
 
-# %% ../nbs/API/04_utils.ipynb #51923eb7
+# %% ../nbs/API/04_utils.ipynb #810b9fbb
 from bokeh.plotting import show as bk_show
 from bokeh.layouts import column, row
 from bokeh.io import output_notebook, reset_output
@@ -498,7 +498,7 @@ import warnings
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
 
-# %% ../nbs/API/04_utils.ipynb #380aea12
+# %% ../nbs/API/04_utils.ipynb #952c041b
 def _save(elements, heights, width, fname:str, title:str="Genome Plot"):
     base_name, ext = os.path.splitext(fname)
     ext = ext.lower()
@@ -524,7 +524,7 @@ def _save(elements, heights, width, fname:str, title:str="Genome Plot"):
                     # webdriver_service = Service(f"{homedir}/chromedriver/stable/chromedriver")
                     # browser = webdriver.Chrome(service=webdriver_service, options=chrome_options)
                     browser = webdriver.Chrome(options=chrome_options)
-            except Exception:
+            except:
                     warnings.warn("""If using WSL you can install chromedriver following these instructions:https://scottspence.com/posts/use-chrome-in-ubuntu-wsl
                                   Also make sure the chromedriver-binary python package has the same major version number as your chrome install.
                                   Check the chrome version using: google-chrome --version
@@ -559,14 +559,14 @@ def _save(elements, heights, width, fname:str, title:str="Genome Plot"):
     
     reset_output()
 
-# %% ../nbs/API/04_utils.ipynb #f47114c3
+# %% ../nbs/API/04_utils.ipynb #ee262327
 def _save_html(elements, fname:str, title:str):
     reset_output()
     bk_output_file(filename=fname, title=title, mode='inline')
     bk_save(column(elements))
     reset_output()
 
-# %% ../nbs/API/04_utils.ipynb #ac121fdf
+# %% ../nbs/API/04_utils.ipynb #c6208df0
 def _gb_show(elements):
     reset_output()
     output_notebook(hide_banner=True)

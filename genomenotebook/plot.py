@@ -5,7 +5,7 @@
 # %% auto #0
 __all__ = ['GenomePlot']
 
-# %% ../nbs/API/03_plot.ipynb #ff45308d
+# %% ../nbs/API/03_plot.ipynb #0570b596
 from fastcore.basics import *
 
 from typing import Union, List, Dict, Optional
@@ -50,7 +50,7 @@ from bokeh.plotting import save as bk_save #Need to rename the bokeh show functi
 import os
 import warnings
 
-# %% ../nbs/API/03_plot.ipynb #29de6532
+# %% ../nbs/API/03_plot.ipynb #be0930eb
 class GenomePlot():
     def __init__(self, browsers:Union["GenomeBrowser",List["GenomeBrowser"]], #a GenomeBrowser object or list of GenomeBrowser objects when a GenomeStack is rendered
                  output_backend:str="webgl" # can be "webgl" or "svg". webgl is more efficient but svg is a vectorial format that can be conveniently modified using other software
@@ -132,13 +132,13 @@ class GenomePlot():
     
     def _set_init_pos(self):
         self.init_pos = self.browser.init_pos
-        if self.init_pos is None:
+        if self.init_pos == None:
             self.init_pos = sum(self.browser.bounds)//2
         elif self.init_pos > self.browser.bounds[1] or self.init_pos < self.browser.bounds[0]:
             warnings.warn("Requested an initial position outside of the browser bounds")
             self.init_pos = sum(self.browser.bounds)//2
 
-# %% ../nbs/API/03_plot.ipynb #f82623cf
+# %% ../nbs/API/03_plot.ipynb #74bf3177
 @patch
 def _add_annotations(self:GenomePlot):
     """
@@ -191,7 +191,7 @@ def _add_annotations(self:GenomePlot):
         )
     )
 
-# %% ../nbs/API/03_plot.ipynb #6b404507
+# %% ../nbs/API/03_plot.ipynb #5f71e4fb
 @patch
 def _get_sequence_div(self:GenomePlot):
         ## Setting the div that will display the sequence
@@ -212,7 +212,7 @@ def _get_sequence_div(self:GenomePlot):
                         styles = sty,
                         )
 
-# %% ../nbs/API/03_plot.ipynb #d4d6eba6
+# %% ../nbs/API/03_plot.ipynb #fa08d6bf
 @patch
 def _set_js_callbacks(self:GenomePlot):
         ## Adding the ability to display the sequence when zooming in
@@ -245,7 +245,7 @@ def _set_js_callbacks(self:GenomePlot):
 
         self.main_fig.x_range.js_on_change('start', self._xcb, self._glyph_update_callback)
 
-# %% ../nbs/API/03_plot.ipynb #90512405
+# %% ../nbs/API/03_plot.ipynb #885c9126
 @patch
 def _get_browser_elements(self:GenomePlot):
         self._add_annotations() 
@@ -257,7 +257,7 @@ def _get_browser_elements(self:GenomePlot):
         else:
             self.elements = [self.main_fig]
 
-# %% ../nbs/API/03_plot.ipynb #b65fa970
+# %% ../nbs/API/03_plot.ipynb #b0aca53b
 @patch
 def _get_search_box(self:GenomePlot):
         ## Create a text input widget for search
@@ -286,7 +286,7 @@ def _get_search_box(self:GenomePlot):
 
         return search_input
 
-# %% ../nbs/API/03_plot.ipynb #6d96b6b2
+# %% ../nbs/API/03_plot.ipynb #5ebfd24d
 @patch
 def _get_sequence_search(self:GenomePlot):
         """Returns a row of Bokeh elements containing the sequence search box a previous button and a next button"""
@@ -357,7 +357,7 @@ def _get_sequence_search(self:GenomePlot):
 
         return row(seq_input, previousButton, nextButton)
 
-# %% ../nbs/API/03_plot.ipynb #cd705770
+# %% ../nbs/API/03_plot.ipynb #aebe0729
 @patch
 def _collect_elements(self:GenomePlot):
     """collects and assembles all the main figure elements including the sequence div and search boxes"""

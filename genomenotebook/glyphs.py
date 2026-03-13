@@ -7,7 +7,7 @@ __all__ = ['default_types', 'default_attributes', 'Y_RANGE', 'default_glyphs', '
            'box_coordinates', 'Glyph', 'get_default_glyphs', 'get_patch_coordinates', 'html_wordwrap', 'get_tooltip',
            'get_feature_name', 'get_feature_patches']
 
-# %% ../nbs/API/02_glyphs.ipynb #f78fdf76
+# %% ../nbs/API/02_glyphs.ipynb #a021285c
 import numpy as np
 import pandas as pd
 
@@ -27,21 +27,21 @@ import copy
 import html
 import re
 
-# %% ../nbs/API/02_glyphs.ipynb #e3361f38
+# %% ../nbs/API/02_glyphs.ipynb #d6f5d29a
 from collections import defaultdict
 
-# %% ../nbs/API/02_glyphs.ipynb #5c89b402
+# %% ../nbs/API/02_glyphs.ipynb #f363a005
 default_types=["CDS", "repeat_region", "ncRNA", "rRNA", "tRNA"]
 default_attributes=defaultdict(lambda: ["gene", "locus_tag", "product"])
 
-# %% ../nbs/API/02_glyphs.ipynb #e1286101
+# %% ../nbs/API/02_glyphs.ipynb #b01d4d5f
 Y_RANGE = (0, 1)
 def get_y_range() -> tuple:
     """Accessor that returns the Y range for the genome browser plot
     """
     return Y_RANGE
 
-# %% ../nbs/API/02_glyphs.ipynb #7cbef482
+# %% ../nbs/API/02_glyphs.ipynb #9a01f688
 def arrow_coordinates(feature, 
                       height: float = 1, #relative height of the feature (between 0 and 1)
                       feature_height: float = 0.15, #fraction of the annotation track occupied by the feature glyphs
@@ -72,7 +72,7 @@ def arrow_coordinates(feature,
     return xs, ys, xbox_min
 
 
-# %% ../nbs/API/02_glyphs.ipynb #da5eca83
+# %% ../nbs/API/02_glyphs.ipynb #5a568782
 def box_coordinates(feature, 
                     height: float = 1, #relative height of the feature (between 0 and 1)
                     feature_height: float = 0.15, #fraction of the annotation track occupied by the feature glyphs
@@ -88,7 +88,7 @@ def box_coordinates(feature,
         ys = tuple((y+(feature_height*feature["z_order"]) for y in ys))
     return xs, ys, min(xs)
 
-# %% ../nbs/API/02_glyphs.ipynb #ba4a2ed0
+# %% ../nbs/API/02_glyphs.ipynb #172746ca
 class Glyph:
     def __init__(self,
                  glyph_type: str ="arrow", # type of the Glyph (arrow or box)
@@ -140,7 +140,7 @@ class Glyph:
             r+=f"\t{attr}: {getattr(self, attr)}\n"
         return r
 
-# %% ../nbs/API/02_glyphs.ipynb #50f389a4
+# %% ../nbs/API/02_glyphs.ipynb #a654e72b
 def get_default_glyphs(arrow_colors=("purple","orange"), box_colors=("grey",)) -> dict:
     """Returns a dictionnary with:
 
@@ -158,7 +158,7 @@ def get_default_glyphs(arrow_colors=("purple","orange"), box_colors=("grey",)) -
 
 default_glyphs=get_default_glyphs()
 
-# %% ../nbs/API/02_glyphs.ipynb #5ffc950e
+# %% ../nbs/API/02_glyphs.ipynb #fd1ae05e
 def get_patch_coordinates(feature, glyphs_dict, feature_height=0.15, color_attribute=None):
     glyph=glyphs_dict[feature.type]
     coordinate, color, alpha = glyph.get_patch(feature, feature_height=feature_height)
@@ -166,7 +166,7 @@ def get_patch_coordinates(feature, glyphs_dict, feature_height=0.15, color_attri
         color = feature.attributes.get(color_attribute, color) # get the color attribute, keep original color if not found.
     return coordinate, color, alpha
 
-# %% ../nbs/API/02_glyphs.ipynb #1e8c65d3
+# %% ../nbs/API/02_glyphs.ipynb #908ae09e
 def html_wordwrap(input_string: str, line_len=50, start=0):
     parts = re.split("(\W|,|;|\|)", input_string)
     out = list()
@@ -182,12 +182,12 @@ def html_wordwrap(input_string: str, line_len=50, start=0):
     return "".join(out)
     
 
-# %% ../nbs/API/02_glyphs.ipynb #603c7824
+# %% ../nbs/API/02_glyphs.ipynb #91146cfb
 def _format_attribute(name, value, color="DodgerBlue", wrap=50):
         return f'<span style="color:{color}">{html.escape(name)}</span><span>: {html_wordwrap(html.escape(str(value)), wrap, len(name)+1)}</span>'
 
 
-# %% ../nbs/API/02_glyphs.ipynb #7f57edd0
+# %% ../nbs/API/02_glyphs.ipynb #47ca11b8
 def get_tooltip(feature, attributes, wrap=50):    
     row_type = feature["type"]
     tooltips = list()
@@ -207,7 +207,7 @@ def get_tooltip(feature, attributes, wrap=50):
                     tooltips.append(_format_attribute(attribute, feature['attributes'][attribute],wrap=wrap))
     return "<br>".join(tooltips)
 
-# %% ../nbs/API/02_glyphs.ipynb #c85d31a3
+# %% ../nbs/API/02_glyphs.ipynb #1911873b
 def get_feature_name(row, glyphs_dict):
     """ For each row of features DataFrame uses the Glyph object provided in the glyphs_dict to know which attribute to use as the name"""
     if glyphs_dict[row.type].show_name:
@@ -219,7 +219,7 @@ def get_feature_name(row, glyphs_dict):
     return ""
 
 
-# %% ../nbs/API/02_glyphs.ipynb #f7e9a3b8
+# %% ../nbs/API/02_glyphs.ipynb #a407f482
 def get_feature_patches(features: pd.DataFrame, #DataFrame of the features 
                         left: int, #left limit
                         right: int, #right limit

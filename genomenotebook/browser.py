@@ -5,7 +5,7 @@
 # %% auto #0
 __all__ = ['GenomeBrowser', 'GenomeBrowserModifier', 'HighlightModifier', 'GenomeStack']
 
-# %% ../nbs/API/00_browser.ipynb #c4956eb7
+# %% ../nbs/API/00_browser.ipynb #33ddb67e
 from fastcore.basics import *
 
 from .track import Track
@@ -36,6 +36,10 @@ from bokeh.models import (
     Quad
 )
 
+from bokeh.io import output_notebook
+
+output_notebook(hide_banner=True) #|hide_line
+
 import Bio
 
 import numpy as np
@@ -48,10 +52,10 @@ from collections import defaultdict
 
 try: #for wsl and/or conda
     import chromedriver_binary
-except ImportError:
+except:
     pass
 
-# %% ../nbs/API/00_browser.ipynb #d9dc9052
+# %% ../nbs/API/00_browser.ipynb #9e38f24e
 class GenomeBrowser:
     """Initialize a GenomeBrowser object.
     """
@@ -136,10 +140,10 @@ class GenomeBrowser:
             self.attributes = {feature_type:self.attributes for feature_type in self.feature_types}
 
         # Aesthetics
-        self.glyphs = get_default_glyphs() if glyphs is None else glyphs
+        self.glyphs = get_default_glyphs() if glyphs==None else glyphs
         self.max_glyph_loading_range = 20000
         
-        if isinstance(feature_name, str):
+        if type(feature_name) is str:
             for feature_type in self.feature_types:
                 self.glyphs[feature_type].name_attr = feature_name
         else: # feature_name is None or a dict
@@ -172,7 +176,7 @@ class GenomeBrowser:
         else:
             self.seq_len = len(self.seq)
         
-        self.bounds = self.bounds if self.bounds is not None else (0, self.seq_len)
+        self.bounds = self.bounds if self.bounds != None else (0, self.seq_len)
         if self.seq is not None:
             self.seq=self.seq[self.bounds[0]:self.bounds[1]]
 
@@ -217,10 +221,10 @@ class GenomeBrowser:
         """
         #if the sequence is provided then seq_len is the length of the reference sequence before bounds are applied
         #else seq_len is the right of the last feature
-        if self.fasta_path is not None:
+        if self.fasta_path != None:
             try:
                 self.seq = parse_fasta(self.fasta_path, self.seq_id)
-            except Exception:
+            except:
                 warnings.warn(f"genome file {self.fasta_path} cannot be parsed as a fasta file")
                 self.show_seq = False #if a sequence is not provided or cannot be parsed then show_seq set to False
         else:
@@ -239,7 +243,7 @@ class GenomeBrowser:
                                             color_attribute = self.color_attribute
                                             )
 
-# %% ../nbs/API/00_browser.ipynb #201d3d54
+# %% ../nbs/API/00_browser.ipynb #e7926297
 @patch
 def show(self:GenomeBrowser):
     """
@@ -249,7 +253,7 @@ def show(self:GenomeBrowser):
     plot._collect_elements()
     _gb_show(plot.elements)
 
-# %% ../nbs/API/00_browser.ipynb #7a6450f2
+# %% ../nbs/API/00_browser.ipynb #3a4e7457
 @patch
 def add_track(self: GenomeBrowser,
              height: int = 200, #size of the track
@@ -264,7 +268,7 @@ def add_track(self: GenomeBrowser,
     return t
     
 
-# %% ../nbs/API/00_browser.ipynb #0ceb5860
+# %% ../nbs/API/00_browser.ipynb #70f3f515
 class GenomeBrowserModifier():
     def __init__(self, gene_track:bool = True, data_tracks:bool = False):
         self.gene_track = gene_track
@@ -273,7 +277,7 @@ class GenomeBrowserModifier():
     def apply(self, fig):
       raise NotImplementedError()
 
-# %% ../nbs/API/00_browser.ipynb #476c9c39
+# %% ../nbs/API/00_browser.ipynb #3cbddb37
 class HighlightModifier(GenomeBrowserModifier):
     def __init__(self,
         data: pd.DataFrame = None, #pandas DataFrame containing the data
@@ -312,13 +316,13 @@ class HighlightModifier(GenomeBrowserModifier):
             raise ValueError(f"`left_col` ({self.left_col}) must be in data")
         
         if right_col not in self.data.columns:
-            raise ValueError(f"`right_col` ({self.right_col}) must be in data")
+            raise ValueError(f"`left_col` ({self.left_col}) must be in data")
         
         if hover_data is None:
             self.hover_data = []
-        elif isinstance(hover_data, str):
+        elif type(hover_data) is str:
             self.hover_data = [hover_data]
-        elif isinstance(hover_data, list):
+        elif type(hover_data) is list:
             self.hover_data = hover_data.copy()
         else:
             raise ValueError("hover_data must be None, str, or List") 
@@ -357,7 +361,7 @@ class HighlightModifier(GenomeBrowserModifier):
 
 
 
-# %% ../nbs/API/00_browser.ipynb #6eef9330
+# %% ../nbs/API/00_browser.ipynb #efb6a0a8
 @patch
 def highlight(self:GenomeBrowser,
         data: pd.DataFrame = None, #pandas DataFrame containing the data
@@ -376,7 +380,7 @@ def highlight(self:GenomeBrowser,
     modifier = HighlightModifier(data, left_col, right_col, color_col, alpha_col, left, right, color, alpha, hover_data, **kwargs)
     self.modifiers.append(modifier)
 
-# %% ../nbs/API/00_browser.ipynb #ce85741b
+# %% ../nbs/API/00_browser.ipynb #3bce9db2
 @patch
 def add_tooltip_data(self:GenomeBrowser,
                     name: str, #name of the data to be added
@@ -390,14 +394,14 @@ def add_tooltip_data(self:GenomeBrowser,
         self.patches.loc[i,"attributes"] += "<br>"+_format_attribute(name,values[i])
 
 
-# %% ../nbs/API/00_browser.ipynb #5bc1136d
+# %% ../nbs/API/00_browser.ipynb #c08024da
 @patch
 def save_html(self:GenomeBrowser, fname:str, title:str="Genome Plot"):
     plot = GenomePlot(self)
     plot._collect_elements()
     _save_html(plot.elements, fname, title)
 
-# %% ../nbs/API/00_browser.ipynb #1958474e
+# %% ../nbs/API/00_browser.ipynb #51d80df0
 @patch
 def save(self:GenomeBrowser, 
          fname:str, # file name (must end in .svg or . png).\n If using svg, GenomeBrowser needs to be initialized with `output_backend="svg"`
@@ -425,7 +429,7 @@ def save(self:GenomeBrowser,
 
 
 
-# %% ../nbs/API/00_browser.ipynb #202bfd47
+# %% ../nbs/API/00_browser.ipynb #19c9f30b
 class GenomeStack():
     def __init__(self, browsers = None):
         self.browsers = browsers
@@ -492,7 +496,7 @@ class GenomeStack():
         
     def save_html(self, fname:str, title:str="Genome Plot"):
         elements = self.get_elements()
-        _save_html(elements, fname, title)
+        save_html(elements, fname, title)
    
     def save(self, 
              fname:str,
@@ -512,7 +516,7 @@ class GenomeStack():
         
         elements = self.get_elements(output_backend=output_backend)
         heights = self.get_heights()
-        _save(elements, heights, self.browsers[0].width, fname, title)
+        save(elements, heights, self.browsers[0].width, fname, title)
         
     @classmethod
     def from_genbank(cls, 
@@ -526,7 +530,7 @@ class GenomeStack():
         #attributes = kwargs.get("attributes", GenomeBrowser._default_feature_types)
         attributes = kwargs.get("attributes", None)
         if attributes is not None:
-            attributes = attributes.copy()
+            attibutes = attributes.copy()
 
         if isinstance(attributes,List):
             attributes = {feature_type:attributes for feature_type in feature_types}
