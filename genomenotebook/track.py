@@ -8,10 +8,6 @@ __all__ = ['Track']
 # %% ../nbs/API/01_track.ipynb #9e76c134
 from fastcore.basics import *
 
-from bokeh.io import output_notebook #|hide_line
-output_notebook(hide_banner=True) #|hide_line
-
-
 from bokeh.plotting import figure
 
 from bokeh.models import (
@@ -37,6 +33,17 @@ import warnings
 
 from typing import List, Callable
 
+
+def _normalize_hover_data(hover_data):
+    """Normalize hover_data to a list of strings."""
+    if hover_data is None:
+        return []
+    elif isinstance(hover_data, str):
+        return [hover_data]
+    elif isinstance(hover_data, list):
+        return hover_data.copy()
+    else:
+        raise ValueError("hover_data must be None, str, or List")
 
 
 # %% ../nbs/API/01_track.ipynb #7061b484
@@ -76,7 +83,7 @@ class Track:
         
         fig.xaxis[0].formatter = NumeralTickFormatter(format="0,0")
         
-        if self.ylim != None:
+        if self.ylim is not None:
             fig.y_range=Range1d(self.ylim[0],self.ylim[1],
                                     bounds=self.ylim)
         
@@ -108,7 +115,7 @@ def set_track_data_source(self:Track,
     self.data=data
 
     y=columns[0] # TODO: columns[0] seems kind of arbitrary, this should probably be set in set_figure data? Or the functions for individual plot types
-    if self.ylim == None:
+    if self.ylim is None:
         ymin = data[y].values.min()
         ymax = data[y].values.max()
         self.ylim = (ymin, ymax) 
@@ -153,14 +160,7 @@ def line(self:Track,
          hover_data:List[str] = None, #list of column names to be shown when hovering over the data
          **kwargs #enables to pass keyword arguments used by the Bokeh function
         ):
-    if hover_data is None:
-        hover_data = []
-    elif type(hover_data) is str:
-        hover_data = [hover_data]
-    elif type(hover_data) is list:
-        hover_data = hover_data.copy()
-    else:
-        raise ValueError("hover_data must be None, str, or List")
+    hover_data = _normalize_hover_data(hover_data)
 
     def render_method(track, fig, loaded_range):
         loaded_data = track.set_figure_data_source(fig, pos, loaded_range)
@@ -184,18 +184,11 @@ def scatter(self:Track,
          hover_data: List = None, #list of additional column names to be shown when hovering over the data
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
-    if hover_data is None:
-        hover_data = list()
-    elif type(hover_data) is str:
-        hover_data = [hover_data]
-    elif type(hover_data) is list:
-        hover_data = hover_data.copy()
-    else:
-        raise ValueError("hover_data must be None, str, or List")
+    hover_data = _normalize_hover_data(hover_data)
 
     def render_method(track, fig, loaded_range):
         loaded_data = track.set_figure_data_source(fig, pos, loaded_range)
-        if factors!=None:
+        if factors is not None:
             color=factor_cmap(factors,"Category10_10",tuple(set(data[factors].values)))
             
             fig.scatter(source=loaded_data, x=pos, y=y, color=color, legend_group=factors, **kwargs)
@@ -223,18 +216,11 @@ def bar(self:Track,
          **kwargs, #enables to pass keyword arguments used by the Bokeh function
         ):
     
-    if hover_data is None:
-        hover_data = list()
-    elif type(hover_data) is str:
-        hover_data = [hover_data]
-    elif type(hover_data) is list:
-        hover_data = hover_data.copy()
-    else:
-        raise ValueError("hover_data must be None, str, or List")
+    hover_data = _normalize_hover_data(hover_data)
 
     def render_method(track, fig, loaded_range):
         loaded_data = track.set_figure_data_source(fig, pos, loaded_range)
-        if factors!=None:
+        if factors is not None:
             color=factor_cmap(factors,"Category10_3",tuple(set(data[factors].values)))
             
             fig.vbar(source=loaded_data, x=pos, top=y, color=color, legend_group=factors, **kwargs)
@@ -276,14 +262,7 @@ def highlight(self:Track,
     **kwargs, #enables to pass keyword arguments used by the Bokeh function
     ):
     
-    if hover_data is None:
-        hover_data = list()
-    elif type(hover_data) is str:
-        hover_data = [hover_data]
-    elif type(hover_data) is list:
-        hover_data = hover_data.copy()
-    else:
-        raise ValueError("hover_data must be None, str, or List")
+    hover_data = _normalize_hover_data(hover_data)
 
     if color_col not in self.data.columns:
         data[color_col] = 'green'

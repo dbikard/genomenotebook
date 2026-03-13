@@ -32,6 +32,5 @@ website:
   sidebar:
     style: "floating"
 
-metadata-files: 
+metadata-files:
   - sidebar.yml
-  - custom.yml

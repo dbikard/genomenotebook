@@ -1,6 +1,4 @@
-include settings.ini
 include LICENSE
-include CONTRIBUTING.md
 include README.md
 include genomenotebook/javascript/*
 include genomenotebook/data/*

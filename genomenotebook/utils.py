@@ -207,8 +207,8 @@ def parse_gff(gff_path:str, # path to the gff file
                 if seq_id is None: #
                     seq_id = current_line_seqid
                 if r[0]==seq_id:
-                    if feature_types==None or r[2] in feature_types:
-                        if bounds==None or (int(r[3])<bounds[1] and int(r[4])>bounds[0]):
+                    if feature_types is None or r[2] in feature_types:
+                        if bounds is None or (int(r[3])<bounds[1] and int(r[4])>bounds[0]):
                             # Write each line to the file buffer
                             file_buffer.write(line)
                             buffer_empty=False
@@ -395,7 +395,7 @@ def seqRecord_to_df(rec: SeqRecord,
                         continue
                     #if key == "ID":
                     #    continue
-                    if (attrs==None) or (key in attrs):
+                    if (attrs is None) or (key in attrs):
                         if len(value) == 1:
                             attributes_list.append((key, value[0]))
                         else:
@@ -524,7 +524,7 @@ def _save(elements, heights, width, fname:str, title:str="Genome Plot"):
                     # webdriver_service = Service(f"{homedir}/chromedriver/stable/chromedriver")
                     # browser = webdriver.Chrome(service=webdriver_service, options=chrome_options)
                     browser = webdriver.Chrome(options=chrome_options)
-            except:
+            except Exception:
                     warnings.warn("""If using WSL you can install chromedriver following these instructions:https://scottspence.com/posts/use-chrome-in-ubuntu-wsl
                                   Also make sure the chromedriver-binary python package has the same major version number as your chrome install.
                                   Check the chrome version using: google-chrome --version

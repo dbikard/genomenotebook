@@ -132,7 +132,7 @@ class GenomePlot():
     
     def _set_init_pos(self):
         self.init_pos = self.browser.init_pos
-        if self.init_pos == None:
+        if self.init_pos is None:
             self.init_pos = sum(self.browser.bounds)//2
         elif self.init_pos > self.browser.bounds[1] or self.init_pos < self.browser.bounds[0]:
             warnings.warn("Requested an initial position outside of the browser bounds")
